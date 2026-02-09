@@ -718,9 +718,10 @@ const ClaimCard: React.FC<{ claim: any; onClick: (c: any) => void }> = ({ claim,
 };
 
 // ─── ClaimDetailView (compact, single-scroll, no tabs) ───
-const ClaimDetailView: React.FC<{ claim: any; onBack: () => void }> = ({
+const ClaimDetailView: React.FC<{ claim: any; onBack: () => void; onClaimUpdated?: (updated: any) => void }> = ({
   claim: initialClaim,
   onBack,
+  onClaimUpdated,
 }) => {
   const styles = useStyles();
   const [claim, setClaim] = useState(initialClaim);
@@ -755,6 +756,7 @@ const ClaimDetailView: React.FC<{ claim: any; onBack: () => void }> = ({
 
       if (json.success && json.data) {
         setClaim(json.data);
+        onClaimUpdated?.(json.data);
         setSaveMsg({ type: 'success', text: `${field} updated` });
       } else {
         throw new Error(json.error || 'Update failed');
@@ -905,6 +907,14 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<any | null>(null);
 
+  const handleClaimUpdated = (updated: any) => {
+    setSelected(updated);
+    setItems(prev => prev.map(c =>
+      (c.id && c.id === updated.id) || (c.claimNumber && c.claimNumber === updated.claimNumber)
+        ? updated : c
+    ));
+  };
+
   useEffect(() => {
     if ((window as any).openai?.theme === 'dark') setIsDark(true);
 
@@ -981,7 +991,7 @@ const App = () => {
                 </div>
               </div>
             </div>
-            <ClaimDetailView claim={selected} onBack={() => setSelected(null)} />
+            <ClaimDetailView claim={selected} onBack={() => setSelected(null)} onClaimUpdated={handleClaimUpdated} />
           </>
         ) : (
           <>
