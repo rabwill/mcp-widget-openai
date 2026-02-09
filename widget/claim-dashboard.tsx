@@ -279,41 +279,39 @@ const extractData = (raw: any): any[] | null => {
 };
 
 // ─── PropertyMap ───
+// Static coordinates for all properties (Redmond, WA area)
+const STATIC_LOCATION: [number, number] = [47.6740, -122.1215];
+
 const PropertyMap: React.FC<{ address: string }> = ({ address }) => {
   const styles = useStyles();
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
 
   useEffect(() => {
-    if (!address || !mapRef.current) return;
+    if (!mapRef.current) return;
 
-    const geocode = async () => {
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
-          { headers: { 'User-Agent': 'ZavaInsuranceWidget/1.0' } }
-        );
-        const results = await res.json();
-        if (results && results.length > 0) {
-          const { lat, lon } = results[0];
-          if (leafletMap.current) leafletMap.current.remove();
-          const map = L.map(mapRef.current!).setView([parseFloat(lat), parseFloat(lon)], 15);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
-          }).addTo(map);
-          L.marker([parseFloat(lat), parseFloat(lon)])
-            .addTo(map)
-            .bindPopup(address)
-            .openPopup();
-          leafletMap.current = map;
-        }
-      } catch (err) {
-        console.error('Geocoding failed:', err);
+    // Small delay so the tab container has non-zero dimensions
+    const timerId = setTimeout(() => {
+      if (leafletMap.current) {
+        leafletMap.current.remove();
+        leafletMap.current = null;
       }
-    };
-    geocode();
+      if (!mapRef.current) return;
+
+      const map = L.map(mapRef.current).setView(STATIC_LOCATION, 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+      }).addTo(map);
+      L.marker(STATIC_LOCATION)
+        .addTo(map)
+        .bindPopup(address || 'Property location')
+        .openPopup();
+      leafletMap.current = map;
+      requestAnimationFrame(() => map.invalidateSize());
+    }, 150);
 
     return () => {
+      clearTimeout(timerId);
       if (leafletMap.current) {
         leafletMap.current.remove();
         leafletMap.current = null;
