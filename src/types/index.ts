@@ -1,5 +1,6 @@
 // Base interfaces for claims operations - simplified structures
-// DamageType is now simplified to string array
+// DamageType is now simplified to a single string
+// Notes is now simplified to a single string
 // PolicyHolder is now simplified to name and email strings
 // Property is now simplified to address string
 // ClaimStatus is now simplified to single string
@@ -24,11 +25,11 @@ export interface Claim {
   dateOfLoss: string;
   dateReported: string;
   status: string;
-  damageTypes: string[];
+  damageTypes: string;
   description: string;
   estimatedLoss: number;
   adjusterAssigned?: string;
-  notes: string[];
+  notes: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -38,8 +39,8 @@ export interface UpdateClaimRequest {
   description?: string;
   estimatedLoss?: number;
   adjusterAssigned?: string;
-  notes?: string[];
-  damageTypes?: string[];
+  notes?: string;
+  damageTypes?: string;
 }
 
 export interface CreateClaimRequest {
@@ -51,11 +52,11 @@ export interface CreateClaimRequest {
   dateOfLoss: string;
   dateReported: string;
   status: string;
-  damageTypes: string[];
+  damageTypes: string;
   description: string;
   estimatedLoss: number;
   adjusterAssigned?: string;
-  notes?: string[];
+  notes?: string;
 }
 
 // Inspection-related interfaces - simplified photos are now just URL strings

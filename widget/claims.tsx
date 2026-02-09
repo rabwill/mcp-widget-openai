@@ -291,11 +291,11 @@ const ClaimCard: React.FC<{ claim: any; onClick: (c: any) => void }> = ({ claim,
           </Body1>
         </div>
       </div>
-      {claim.damageTypes && claim.damageTypes.length > 0 && (
+      {claim.damageTypes && (
         <div className={styles.damageTags}>
-          {claim.damageTypes.map((d: string, i: number) => (
+          {claim.damageTypes.split(',').map((d: string, i: number) => (
             <Badge key={i} appearance="outline">
-              {d}
+              {d.trim()}
             </Badge>
           ))}
         </div>
@@ -406,13 +406,13 @@ const ClaimDetailView: React.FC<{ claim: any; onBack: () => void }> = ({ claim, 
           </div>
 
           {/* Damage Types */}
-          {claim.damageTypes && claim.damageTypes.length > 0 && (
+          {claim.damageTypes && (
             <div className={styles.section}>
               <div className={styles.sectionTitle}>Damage Types</div>
               <div className={styles.damageTags} style={{ marginTop: 0 }}>
-                {claim.damageTypes.map((d: string, i: number) => (
+                {claim.damageTypes.split(',').map((d: string, i: number) => (
                   <Badge key={i} appearance="outline">
-                    {d}
+                    {d.trim()}
                   </Badge>
                 ))}
               </div>
@@ -436,15 +436,11 @@ const ClaimDetailView: React.FC<{ claim: any; onBack: () => void }> = ({ claim, 
           </div>
 
           {/* Notes */}
-          {claim.notes && claim.notes.length > 0 && (
+          {claim.notes && (
             <div className={styles.section}>
               <div className={styles.sectionTitle}>Notes</div>
-              <div className={styles.notesList}>
-                {claim.notes.map((note: string, i: number) => (
-                  <div key={i} className={styles.noteItem}>
-                    <Body1>• {note}</Body1>
-                  </div>
-                ))}
+              <div className={styles.descriptionBox}>
+                <Body1>{claim.notes}</Body1>
               </div>
             </div>
           )}

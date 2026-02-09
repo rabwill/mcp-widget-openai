@@ -30,11 +30,11 @@ const tables: TableData[] = [
       dateOfLoss: item.dateOfLoss,
       dateReported: item.dateReported,
       status: item.status,
-      damageTypesData: JSON.stringify(item.damageTypes),
+      damageTypesData: item.damageTypes,
       description: item.description,
       estimatedLoss: item.estimatedLoss,
       adjusterAssigned: item.adjusterAssigned,
-      notesData: JSON.stringify(item.notes),
+      notesData: item.notes,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt
     })

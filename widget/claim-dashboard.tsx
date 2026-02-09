@@ -555,84 +555,6 @@ const StatusDropdown: React.FC<{
   );
 };
 
-// ─── EditableList (notes / damageTypes) ───
-const EditableList: React.FC<{
-  items: string[];
-  onSave: (v: string[]) => void;
-  label: string;
-}> = ({ items, onSave, label }) => {
-  const styles = useStyles();
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState((items || []).join('\n'));
-
-  useEffect(() => {
-    setDraft((items || []).join('\n'));
-  }, [items]);
-
-  const commit = () => {
-    const list = draft
-      .split('\n')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    onSave(list);
-    setEditing(false);
-  };
-  const cancel = () => {
-    setDraft((items || []).join('\n'));
-    setEditing(false);
-  };
-
-  if (!editing) {
-    return (
-      <div>
-        <div className={styles.notesList}>
-          {(items || []).map((item, i) => (
-            <div key={i} className={styles.noteItem}>
-              • {item}
-            </div>
-          ))}
-          {(!items || items.length === 0) && (
-            <Caption1 style={{ color: tokens.colorNeutralForeground4 }}>None</Caption1>
-          )}
-        </div>
-        <Tooltip content={`Edit ${label.toLowerCase()}`} relationship="description">
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<Edit24Regular />}
-            onClick={() => setEditing(true)}
-            style={{ marginTop: '4px' }}
-          >
-            Edit
-          </Button>
-        </Tooltip>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <Textarea
-        size="small"
-        value={draft}
-        onChange={(_e, d) => setDraft(d.value)}
-        resize="vertical"
-        placeholder={`One ${label.toLowerCase().replace(/s$/, '')} per line`}
-        style={{ width: '100%', minHeight: '60px' }}
-        autoFocus
-      />
-      <div className={styles.editActions}>
-        <Button appearance="primary" size="small" icon={<Save24Regular />} onClick={commit}>
-          Save
-        </Button>
-        <Button appearance="subtle" size="small" icon={<Dismiss24Regular />} onClick={cancel}>
-          Cancel
-        </Button>
-      </div>
-    </div>
-  );
-};
-
 // ─── StatsBar ───
 const StatsBar: React.FC<{ claims: any[] }> = ({ claims }) => {
   const styles = useStyles();
@@ -704,11 +626,11 @@ const ClaimCard: React.FC<{ claim: any; onClick: (c: any) => void }> = ({ claim,
           </Body2>
         </div>
       </div>
-      {claim.damageTypes && claim.damageTypes.length > 0 && (
+      {claim.damageTypes && (
         <div className={styles.damageTags}>
-          {claim.damageTypes.map((d: string, i: number) => (
+          {claim.damageTypes.split(',').map((d: string, i: number) => (
             <Badge key={i} appearance="outline" size="small">
-              {d}
+              {d.trim()}
             </Badge>
           ))}
         </div>
@@ -869,14 +791,13 @@ const ClaimDetailView: React.FC<{ claim: any; onBack: () => void; onClaimUpdated
           </div>
 
           {/* Damage Types */}
-          {claim.damageTypes && claim.damageTypes.length > 0 && (
+          {claim.damageTypes && (
             <div className={styles.section}>
               <div className={styles.sectionTitle}>
                 <Subtitle2>Damage Types</Subtitle2>
               </div>
-              <EditableList
-                items={claim.damageTypes}
-                label="Damage Types"
+              <InlineMultiline
+                value={claim.damageTypes}
                 onSave={(v) => updateField('damageTypes', v)}
               />
             </div>
@@ -887,9 +808,8 @@ const ClaimDetailView: React.FC<{ claim: any; onBack: () => void; onClaimUpdated
             <div className={styles.sectionTitle}>
               <Subtitle2>Notes</Subtitle2>
             </div>
-            <EditableList
-              items={claim.notes}
-              label="Notes"
+            <InlineMultiline
+              value={claim.notes || ''}
               onSave={(v) => updateField('notes', v)}
             />
           </div>

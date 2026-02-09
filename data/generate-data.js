@@ -231,10 +231,7 @@ function generateClaims() {
       dateOfLoss: formatDate(lossDate),
       dateReported: formatDate(reportDate),
       status: randomElement(claimStatuses),
-      damageTypes: [
-        `${damage.primary} - ${severity} severity`,
-        damage.secondary
-      ],
+      damageTypes: `${damage.primary} - ${severity} severity, ${damage.secondary}`,
       description: `${damage.primary} to property requiring assessment and repair`,
       estimatedLoss: randomInt(2000, 50000),
       adjusterAssigned: `adj-${String(randomInt(1, 10)).padStart(3, '0')}`,
@@ -242,7 +239,7 @@ function generateClaims() {
         "Initial report filed",
         Math.random() > 0.5 ? "Photos uploaded" : "Awaiting documentation",
         Math.random() > 0.7 ? "Urgent priority" : "Standard processing"
-      ].filter(() => Math.random() > 0.3),
+      ].filter(() => Math.random() > 0.3).join('. '),
       createdAt: formatDate(reportDate),
       updatedAt: formatDate(new Date(reportDate.getTime() + randomInt(1, 168) * 60 * 60 * 1000))
     });
@@ -298,10 +295,7 @@ function generateClaims() {
         "Under Investigation - Claim is being reviewed by adjusters",
         "Pending Documentation - Awaiting additional information"
       ]), // Recent claims are still open
-      damageTypes: [
-        `${damage.primary} - ${severity} severity`,
-        damage.secondary
-      ],
+      damageTypes: `${damage.primary} - ${severity} severity, ${damage.secondary}`,
       description: `Emergency: ${damage.primary} from recent storm event requiring immediate assessment`,
       estimatedLoss: randomInt(15000, 75000), // Higher losses for storm damage
       adjusterAssigned: `adj-${String(randomInt(1, 10)).padStart(3, '0')}`,
@@ -310,7 +304,7 @@ function generateClaims() {
         "Photos uploaded",
         severity === "severe" ? "URGENT - Emergency response required" : "High priority storm claim",
         `Reported ${Math.floor(hoursAgo)} hours after incident`
-      ],
+      ].join('. '),
       createdAt: formatDate(reportDate),
       updatedAt: formatDate(new Date(Math.max(reportDate.getTime(), now.getTime() - 2 * 60 * 60 * 1000)))
     });
@@ -344,11 +338,11 @@ function generateInspections(claims, inspectors) {
         scheduledDate: formatDate(scheduledDate),
         inspectorId: randomElement(inspectors).id,
         property: claim.property,
-        instructions: `Assess ${claim.damageTypes[0]} and document findings`,
+        instructions: `Assess ${claim.damageTypes.split(',')[0].trim()} and document findings`,
         photos: isCompleted ? [
           `https://github.com/rabwill/zava-assets/blob/main/IMG-${String(randomInt(1, 20)).padStart(2, '0')}.png?raw=true`
         ] : [],
-        findings: isCompleted ? `Inspection completed. ${claim.damageTypes[0]} confirmed. ${randomElement([
+        findings: isCompleted ? `Inspection completed. ${claim.damageTypes.split(',')[0].trim()} confirmed. ${randomElement([
           "Immediate repairs recommended.",
           "Temporary stabilization required.",
           "Further assessment needed.",
@@ -448,7 +442,7 @@ function generatePurchaseOrders(claims, inspections, contractors) {
         claimId: claim.id,
         claimNumber: claim.claimNumber,
         contractorId: contractor.id,
-        workDescription: `${claim.damageTypes[0]} repair and restoration services`,
+        workDescription: `${claim.damageTypes.split(',')[0].trim()} repair and restoration services`,
         lineItems,
         subtotal: Math.round(subtotal * 100) / 100,
         tax: Math.round(tax * 100) / 100,

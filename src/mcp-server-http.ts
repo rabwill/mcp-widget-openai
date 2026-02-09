@@ -92,11 +92,11 @@ const CreateClaimArgsSchema = z.object({
   dateOfLoss: z.string(),
   dateReported: z.string(),
   status: z.string(),
-  damageTypes: z.array(z.string()),
+  damageTypes: z.string(),
   description: z.string(),
   estimatedLoss: z.number(),
   adjusterAssigned: z.string().optional(),
-  notes: z.array(z.string()).optional()
+  notes: z.string().optional()
 });
 
 const UpdateClaimArgsSchema = z.object({
@@ -105,8 +105,8 @@ const UpdateClaimArgsSchema = z.object({
   description: z.string().optional(),
   estimatedLoss: z.number().optional(),
   adjusterAssigned: z.string().optional(),
-  notes: z.array(z.string()).optional(),
-  damageTypes: z.array(z.string()).optional()
+  notes: z.string().optional(),
+  damageTypes: z.string().optional()
 });
 
 const DeleteClaimArgsSchema = z.object({
@@ -283,11 +283,11 @@ const TOOLS = [
         dateOfLoss: { type: 'string', description: 'ISO date string' },
         dateReported: { type: 'string', description: 'ISO date string' },
         status: { type: 'string', description: 'Current claim status' },
-        damageTypes: { type: 'array', items: { type: 'string' }, description: 'Array of damage types' },
+        damageTypes: { type: 'string', description: 'Damage types (comma-separated)' },
         description: { type: 'string', description: 'Claim description' },
         estimatedLoss: { type: 'number', description: 'Estimated loss amount' },
         adjusterAssigned: { type: 'string', description: 'Assigned adjuster ID' },
-        notes: { type: 'array', items: { type: 'string' }, description: 'Additional notes' }
+        notes: { type: 'string', description: 'Additional notes' }
       },
       required: ['claimNumber', 'policyNumber', 'policyHolderName', 'policyHolderEmail', 'property', 'dateOfLoss', 'dateReported', 'status', 'damageTypes', 'description', 'estimatedLoss']
     },
@@ -303,8 +303,8 @@ const TOOLS = [
         description: { type: 'string', description: 'Updated claim description' },
         estimatedLoss: { type: 'number', description: 'Updated estimated loss amount' },
         adjusterAssigned: { type: 'string', description: 'Updated assigned adjuster ID' },
-        notes: { type: 'array', items: { type: 'string' }, description: 'Updated notes' },
-        damageTypes: { type: 'array', items: { type: 'string' }, description: 'Updated damage types' }
+        notes: { type: 'string', description: 'Updated notes' },
+        damageTypes: { type: 'string', description: 'Updated damage types (comma-separated)' }
       },
       required: ['claimId']
     },
@@ -817,7 +817,7 @@ async function generatePrompt(name: string, args: any): Promise<string> {
 - **Property Address**: ${claim.property}
 
 ## Damage Information
-${claim.damageTypes?.map((damage: string) => `- ${damage}`).join('\\n') || '- No damage details recorded'}
+${claim.damageTypes || 'No damage details recorded'}
 
 ## Assessment Instructions
 Please provide a comprehensive damage assessment including:
@@ -830,7 +830,7 @@ Please provide a comprehensive damage assessment including:
 ## Current Description
 ${claim.description}
 
-${claim.notes?.length ? `## Additional Notes\n${claim.notes.map((note: string, i: number) => `${i + 1}. ${note}`).join('\\n')}` : ''}`;
+${claim.notes ? `## Additional Notes\n${claim.notes}` : ''}`;
             break;
 
           case 'cost_estimation':
@@ -852,7 +852,7 @@ Based on the claim information provided, please:
 6. Flag any estimates that require additional verification
 
 ## Damage Summary
-${claim.damageTypes?.map((damage: string) => `- ${damage}`).join('\\n') || 'No damage details available'}
+${claim.damageTypes || 'No damage details available'}
 
 ## Current Claim Description
 ${claim.description}`;
@@ -880,13 +880,12 @@ Please analyze this claim for potential fraud indicators including:
 ## Claim Details
 **Description**: ${claim.description}
 
-**Damage Types**: 
-${claim.damageTypes?.map((damage: string) => `- ${damage}`).join('\\n') || 'No damage types recorded'}
+**Damage Types**: ${claim.damageTypes || 'No damage types recorded'}
 
 **Property Address**: ${claim.property}
 
 ## Additional Context
-${claim.notes?.length ? claim.notes.map((note: string, i: number) => `${i + 1}. ${note}`).join('\\n') : 'No additional notes provided'}`;
+${claim.notes || 'No additional notes provided'}`;
             break;
         }
 
@@ -945,8 +944,7 @@ Please provide a detailed assessment covering:
 **Date of Loss**: ${claim.dateOfLoss}
 **Description**: ${claim.description}
 
-${claim.damageTypes?.length ? `## Recorded Damage Types
-${claim.damageTypes.map((damage: string) => `- ${damage}`).join('\\n')}` : ''}`;
+${claim.damageTypes ? `## Recorded Damage Types\n${claim.damageTypes}` : ''}`;
 
         return promptContent;
       }
