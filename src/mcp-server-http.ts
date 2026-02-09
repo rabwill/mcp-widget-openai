@@ -37,6 +37,17 @@ try {
   widgetHtml = `<!DOCTYPE html><html><body><p>Widget failed to load</p></body></html>`;
 }
 
+// Load the Claim Dashboard widget HTML
+const dashboardHtmlPath = resolve(process.cwd(), "public/claim-dashboard-widget.html");
+let dashboardWidgetHtml: string;
+try {
+  dashboardWidgetHtml = readFileSync(dashboardHtmlPath, "utf8");
+  console.log(`Loaded Claim Dashboard widget from ${dashboardHtmlPath}`);
+} catch (e) {
+  console.error(`Failed to load dashboard widget HTML from ${dashboardHtmlPath}:`, e);
+  dashboardWidgetHtml = `<!DOCTYPE html><html><body><p>Dashboard widget failed to load</p></body></html>`;
+}
+
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
@@ -233,7 +244,7 @@ const TOOLS = [
     },
     // OpenAI Apps SDK widget metadata
     _meta: {
-      "openai/outputTemplate": "ui://widget/claims.html",
+      "openai/outputTemplate": "ui://widget/claim-dashboard.html",
       "openai/toolInvocation/invoking": "Fetching claims...",
       "openai/toolInvocation/invoked": "Claims loaded",
     },
@@ -253,7 +264,7 @@ const TOOLS = [
     },
     // OpenAI Apps SDK widget metadata
     _meta: {
-      "openai/outputTemplate": "ui://widget/claims.html",
+      "openai/outputTemplate": "ui://widget/claim-dashboard.html",
       "openai/toolInvocation/invoking": "Loading claim details...",
       "openai/toolInvocation/invoked": "Claim details loaded",
     },
@@ -1165,11 +1176,18 @@ app.get('/health', (req, res) => {
 
 // No OAuth discovery endpoints - authentication is disabled
 
-// OpenAI Apps SDK Widget Resource Endpoint
+// OpenAI Apps SDK Widget Resource Endpoint (original claims widget)
 app.get('/mcp/resources/widget/claims.html', (req, res) => {
   res.setHeader('Content-Type', 'text/html+skybridge');
   res.setHeader('X-Widget-Prefers-Border', 'true');
   res.send(widgetHtml);
+});
+
+// Claim Dashboard Widget Resource Endpoint (new dashboard with map + inline editing)
+app.get('/mcp/resources/widget/claim-dashboard.html', (req, res) => {
+  res.setHeader('Content-Type', 'text/html+skybridge');
+  res.setHeader('X-Widget-Prefers-Border', 'true');
+  res.send(dashboardWidgetHtml);
 });
 
 // MCP Resources endpoint for OpenAI Apps SDK
@@ -1186,6 +1204,18 @@ app.get('/mcp/resources', (req, res) => {
           'openai/widgetDescription': 
             'Interactive dashboard for viewing and managing Zava Insurance claims, inspections, contractors, and inspectors. ' +
             'Displays data in cards with statistics, status badges, and action buttons.',
+        },
+      },
+      {
+        uri: 'ui://widget/claim-dashboard.html',
+        name: 'claim-dashboard-widget',
+        mimeType: 'text/html+skybridge',
+        description: 'Claim dashboard with property map, inline editing, and tabbed detail view for Zava Insurance claims.',
+        _meta: {
+          'openai/widgetPrefersBorder': true,
+          'openai/widgetDescription':
+            'Rich claim dashboard with interactive map for property locations, inline editing for updatable fields, ' +
+            'and tabbed navigation for overview, property, and detail sections.',
         },
       }
     ]
@@ -1332,6 +1362,18 @@ app.post('/mcp/messages', async (req, res) => {
                   'Interactive dashboard for viewing and managing Zava Insurance claims, inspections, contractors, and inspectors. ' +
                   'Displays data in cards with statistics, status badges, and action buttons.',
               },
+            },
+            {
+              uri: 'ui://widget/claim-dashboard.html',
+              name: 'claim-dashboard-widget',
+              mimeType: 'text/html+skybridge',
+              description: 'Claim dashboard with property map, inline editing, and tabbed detail view.',
+              _meta: {
+                'openai/widgetPrefersBorder': true,
+                'openai/widgetDescription':
+                  'Rich claim dashboard with interactive map for property locations, inline editing for updatable fields, ' +
+                  'and tabbed navigation for overview, property, and detail sections.',
+              },
             }
           ]
         };
@@ -1346,6 +1388,19 @@ app.post('/mcp/messages', async (req, res) => {
                 uri: 'ui://widget/claims.html',
                 mimeType: 'text/html+skybridge',
                 text: widgetHtml,
+                _meta: {
+                  'openai/widgetPrefersBorder': true,
+                },
+              }
+            ]
+          };
+        } else if (uri === 'ui://widget/claim-dashboard.html') {
+          result = {
+            contents: [
+              {
+                uri: 'ui://widget/claim-dashboard.html',
+                mimeType: 'text/html+skybridge',
+                text: dashboardWidgetHtml,
                 _meta: {
                   'openai/widgetPrefersBorder': true,
                 },
