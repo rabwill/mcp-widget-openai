@@ -73,143 +73,143 @@
   },
   {
     "id": "contractor-004",
-    "name": "Mark Young",
-    "businessName": "Young General Contractors",
-    "email": "mark.young@contractor4.com",
-    "phone": "555-5857",
+    "name": "Jennifer Lewis",
+    "businessName": "Lewis Property Services",
+    "email": "jennifer.lewis@contractor4.com",
+    "phone": "555-8569",
     "address": {
-      "street": "8629 Maple Dr",
-      "city": "Portland",
+      "street": "3046 Lincoln Ave",
+      "city": "Bend",
       "state": "OR",
-      "zipCode": "97201",
+      "zipCode": "97701",
       "country": "USA"
     },
-    "licenseNumber": "OR-ELC-2024-004",
+    "licenseNumber": "OR-ROF-2024-004",
     "insuranceCertificate": "INS-CERT-2024-004",
     "specialties": [
-      "Fire Damage Restoration",
-      "Smoke Cleanup",
-      "Odor Removal"
+      "Foundation Repair",
+      "Structural Engineering",
+      "Waterproofing"
     ],
-    "rating": "4.0",
+    "rating": "4.7",
     "isPreferred": false,
     "isActive": true
   },
   {
     "id": "contractor-005",
-    "name": "David King",
-    "businessName": "King Emergency Restoration",
-    "email": "david.king@contractor5.com",
-    "phone": "555-2422",
+    "name": "Nicole Taylor",
+    "businessName": "Taylor Property Services",
+    "email": "nicole.taylor@contractor5.com",
+    "phone": "555-3402",
     "address": {
-      "street": "4229 Valley Rd",
-      "city": "Olympia",
-      "state": "WA",
-      "zipCode": "98501",
+      "street": "8807 Mountain Rd",
+      "city": "Salem",
+      "state": "OR",
+      "zipCode": "97301",
       "country": "USA"
     },
-    "licenseNumber": "WA-ROF-2024-005",
+    "licenseNumber": "OR-ROF-2024-005",
     "insuranceCertificate": "INS-CERT-2024-005",
     "specialties": [
-      "General Contracting",
-      "Structural Repair",
-      "Renovation"
+      "Fire Damage Restoration",
+      "Smoke Cleanup",
+      "Odor Removal"
     ],
-    "rating": "3.7",
+    "rating": "4.1",
     "isPreferred": true,
     "isActive": true
   },
   {
     "id": "contractor-006",
-    "name": "Richard Thompson",
-    "businessName": "Thompson Property Services",
-    "email": "richard.thompson@contractor6.com",
-    "phone": "555-3598",
+    "name": "Robert Wilson",
+    "businessName": "Wilson Emergency Restoration",
+    "email": "robert.wilson@contractor6.com",
+    "phone": "555-9143",
     "address": {
-      "street": "6388 Cedar Ln",
-      "city": "Seattle",
-      "state": "WA",
-      "zipCode": "98101",
-      "country": "USA"
-    },
-    "licenseNumber": "WA-PLB-2024-006",
-    "insuranceCertificate": "INS-CERT-2024-006",
-    "specialties": [
-      "General Contracting",
-      "Structural Repair",
-      "Renovation"
-    ],
-    "rating": "4.5",
-    "isPreferred": true,
-    "isActive": true
-  },
-  {
-    "id": "contractor-007",
-    "name": "Donald Jackson",
-    "businessName": "Jackson Damage Repair Inc",
-    "email": "donald.jackson@contractor7.com",
-    "phone": "555-7119",
-    "address": {
-      "street": "5051 Oak Ave",
-      "city": "Seattle",
-      "state": "WA",
-      "zipCode": "98101",
-      "country": "USA"
-    },
-    "licenseNumber": "WA-GEN-2024-007",
-    "insuranceCertificate": "INS-CERT-2024-007",
-    "specialties": [
-      "Plumbing Services",
-      "Pipe Repair",
-      "Water Line Installation"
-    ],
-    "rating": "4.5",
-    "isPreferred": false,
-    "isActive": true
-  },
-  {
-    "id": "contractor-008",
-    "name": "Lisa Jones",
-    "businessName": "Jones Construction Co",
-    "email": "lisa.jones@contractor8.com",
-    "phone": "555-8976",
-    "address": {
-      "street": "1448 River St",
-      "city": "Eugene",
+      "street": "9264 Oak Ave",
+      "city": "Bend",
       "state": "OR",
-      "zipCode": "97401",
+      "zipCode": "97701",
       "country": "USA"
     },
-    "licenseNumber": "OR-ROF-2024-008",
-    "insuranceCertificate": "INS-CERT-2024-008",
+    "licenseNumber": "OR-ROF-2024-006",
+    "insuranceCertificate": "INS-CERT-2024-006",
     "specialties": [
       "Emergency Services",
       "24/7 Response",
       "Disaster Recovery"
     ],
-    "rating": "4.0",
+    "rating": "3.7",
     "isPreferred": false,
     "isActive": true
   },
   {
-    "id": "contractor-009",
-    "name": "Christopher Davis",
-    "businessName": "Davis Property Services",
-    "email": "christopher.davis@contractor9.com",
-    "phone": "555-7883",
+    "id": "contractor-007",
+    "name": "Robert Harris",
+    "businessName": "Harris Emergency Restoration",
+    "email": "robert.harris@contractor7.com",
+    "phone": "555-4716",
     "address": {
-      "street": "3504 Washington Blvd",
-      "city": "Portland",
+      "street": "772 Maple Dr",
+      "city": "Eugene",
       "state": "OR",
-      "zipCode": "97201",
+      "zipCode": "97401",
       "country": "USA"
     },
-    "licenseNumber": "OR-GEN-2024-009",
+    "licenseNumber": "OR-ELC-2024-007",
+    "insuranceCertificate": "INS-CERT-2024-007",
+    "specialties": [
+      "Emergency Services",
+      "24/7 Response",
+      "Disaster Recovery"
+    ],
+    "rating": "3.7",
+    "isPreferred": false,
+    "isActive": true
+  },
+  {
+    "id": "contractor-008",
+    "name": "Lisa Thomas",
+    "businessName": "Thomas General Contractors",
+    "email": "lisa.thomas@contractor8.com",
+    "phone": "555-9914",
+    "address": {
+      "street": "828 Washington Blvd",
+      "city": "Bend",
+      "state": "OR",
+      "zipCode": "97701",
+      "country": "USA"
+    },
+    "licenseNumber": "OR-ELC-2024-008",
+    "insuranceCertificate": "INS-CERT-2024-008",
+    "specialties": [
+      "Plumbing Services",
+      "Pipe Repair",
+      "Water Line Installation"
+    ],
+    "rating": "3.6",
+    "isPreferred": false,
+    "isActive": false
+  },
+  {
+    "id": "contractor-009",
+    "name": "Emily Wright",
+    "businessName": "Wright Damage Repair Inc",
+    "email": "emily.wright@contractor9.com",
+    "phone": "555-2859",
+    "address": {
+      "street": "8716 Cedar Ln",
+      "city": "Bend",
+      "state": "OR",
+      "zipCode": "97701",
+      "country": "USA"
+    },
+    "licenseNumber": "OR-ELC-2024-009",
     "insuranceCertificate": "INS-CERT-2024-009",
     "specialties": [
-      "Water Damage Restoration",
-      "Mold Remediation",
-      "Flood Cleanup"
+      "General Contracting",
+      "Structural Repair",
+      "Renovation"
     ],
     "rating": "4.6",
     "isPreferred": false,
@@ -217,119 +217,119 @@
   },
   {
     "id": "contractor-010",
-    "name": "Sarah Harris",
-    "businessName": "Harris Damage Repair Inc",
-    "email": "sarah.harris@contractor10.com",
-    "phone": "555-1829",
+    "name": "Stephanie Rodriguez",
+    "businessName": "Rodriguez Construction Co",
+    "email": "stephanie.rodriguez@contractor10.com",
+    "phone": "555-1306",
     "address": {
-      "street": "4178 Washington Blvd",
-      "city": "Seattle",
+      "street": "2151 Oak Ave",
+      "city": "Tacoma",
       "state": "WA",
-      "zipCode": "98101",
+      "zipCode": "98401",
       "country": "USA"
     },
-    "licenseNumber": "WA-ELC-2024-010",
+    "licenseNumber": "WA-FIR-2024-010",
     "insuranceCertificate": "INS-CERT-2024-010",
     "specialties": [
       "Water Damage Restoration",
       "Mold Remediation",
       "Flood Cleanup"
     ],
-    "rating": "4.2",
-    "isPreferred": true,
+    "rating": "3.9",
+    "isPreferred": false,
     "isActive": true
   },
   {
     "id": "contractor-011",
-    "name": "William Wilson",
-    "businessName": "Wilson Construction Co",
-    "email": "william.wilson@contractor11.com",
-    "phone": "555-2744",
+    "name": "William White",
+    "businessName": "White Roofing Solutions",
+    "email": "william.white@contractor11.com",
+    "phone": "555-8352",
     "address": {
-      "street": "6806 Main St",
-      "city": "Portland",
-      "state": "OR",
-      "zipCode": "97201",
+      "street": "3042 Pine Rd",
+      "city": "Spokane",
+      "state": "WA",
+      "zipCode": "99201",
       "country": "USA"
     },
-    "licenseNumber": "OR-WTR-2024-011",
+    "licenseNumber": "WA-GEN-2024-011",
     "insuranceCertificate": "INS-CERT-2024-011",
     "specialties": [
-      "General Contracting",
-      "Structural Repair",
-      "Renovation"
+      "Roofing",
+      "Storm Damage Repair",
+      "Emergency Services"
     ],
-    "rating": "3.5",
+    "rating": "3.7",
     "isPreferred": false,
     "isActive": true
   },
   {
     "id": "contractor-012",
-    "name": "Laura Walker",
-    "businessName": "Walker Building Services",
-    "email": "laura.walker@contractor12.com",
-    "phone": "555-1988",
+    "name": "Steven Taylor",
+    "businessName": "Taylor Roofing Solutions",
+    "email": "steven.taylor@contractor12.com",
+    "phone": "555-9093",
     "address": {
-      "street": "1713 Park Pl",
-      "city": "Vancouver",
-      "state": "WA",
-      "zipCode": "98660",
+      "street": "189 Hill Crest Dr",
+      "city": "Salem",
+      "state": "OR",
+      "zipCode": "97301",
       "country": "USA"
     },
-    "licenseNumber": "WA-GEN-2024-012",
+    "licenseNumber": "OR-GEN-2024-012",
     "insuranceCertificate": "INS-CERT-2024-012",
     "specialties": [
       "Emergency Services",
       "24/7 Response",
       "Disaster Recovery"
     ],
-    "rating": "4.0",
-    "isPreferred": true,
-    "isActive": true
-  },
-  {
-    "id": "contractor-013",
-    "name": "Michael Taylor",
-    "businessName": "Taylor Professional Contractors",
-    "email": "michael.taylor@contractor13.com",
-    "phone": "555-9395",
-    "address": {
-      "street": "5925 River St",
-      "city": "Bend",
-      "state": "OR",
-      "zipCode": "97701",
-      "country": "USA"
-    },
-    "licenseNumber": "OR-ELC-2024-013",
-    "insuranceCertificate": "INS-CERT-2024-013",
-    "specialties": [
-      "Exterior Siding",
-      "Window Replacement",
-      "Door Installation"
-    ],
-    "rating": "4.9",
+    "rating": "4.8",
     "isPreferred": false,
     "isActive": true
   },
   {
-    "id": "contractor-014",
-    "name": "Laura Wright",
-    "businessName": "Wright Construction Co",
-    "email": "laura.wright@contractor14.com",
-    "phone": "555-4458",
+    "id": "contractor-013",
+    "name": "Stephanie Clark",
+    "businessName": "Clark Restoration Services",
+    "email": "stephanie.clark@contractor13.com",
+    "phone": "555-1259",
     "address": {
-      "street": "6190 Forest Ave",
-      "city": "Bend",
+      "street": "3399 Oak Ave",
+      "city": "Eugene",
       "state": "OR",
-      "zipCode": "97701",
+      "zipCode": "97401",
       "country": "USA"
     },
-    "licenseNumber": "OR-PLB-2024-014",
+    "licenseNumber": "OR-FIR-2024-013",
+    "insuranceCertificate": "INS-CERT-2024-013",
+    "specialties": [
+      "Water Damage Restoration",
+      "Mold Remediation",
+      "Flood Cleanup"
+    ],
+    "rating": "3.9",
+    "isPreferred": true,
+    "isActive": true
+  },
+  {
+    "id": "contractor-014",
+    "name": "Christopher Brown",
+    "businessName": "Brown Roofing Solutions",
+    "email": "christopher.brown@contractor14.com",
+    "phone": "555-7743",
+    "address": {
+      "street": "4109 Maple Dr",
+      "city": "Tacoma",
+      "state": "WA",
+      "zipCode": "98401",
+      "country": "USA"
+    },
+    "licenseNumber": "WA-ROF-2024-014",
     "insuranceCertificate": "INS-CERT-2024-014",
     "specialties": [
-      "Roofing",
-      "Storm Damage Repair",
-      "Emergency Services"
+      "Electrical Services",
+      "Wiring Repair",
+      "System Upgrades"
     ],
     "rating": "4.9",
     "isPreferred": true,
@@ -337,43 +337,283 @@
   },
   {
     "id": "contractor-015",
-    "name": "Rebecca Williams",
-    "businessName": "Williams Building Services",
-    "email": "rebecca.williams@contractor15.com",
-    "phone": "555-1717",
+    "name": "William Anderson",
+    "businessName": "Anderson Property Services",
+    "email": "william.anderson@contractor15.com",
+    "phone": "555-3204",
     "address": {
-      "street": "995 Hill Crest Dr",
-      "city": "Seattle",
-      "state": "WA",
-      "zipCode": "98101",
+      "street": "3129 Oak Ave",
+      "city": "Salem",
+      "state": "OR",
+      "zipCode": "97301",
       "country": "USA"
     },
-    "licenseNumber": "WA-ELC-2024-015",
+    "licenseNumber": "OR-FIR-2024-015",
     "insuranceCertificate": "INS-CERT-2024-015",
+    "specialties": [
+      "Plumbing Services",
+      "Pipe Repair",
+      "Water Line Installation"
+    ],
+    "rating": "3.8",
+    "isPreferred": true,
+    "isActive": false
+  },
+  {
+    "id": "contractor-016",
+    "name": "Laura Miller",
+    "businessName": "Miller Building Services",
+    "email": "laura.miller@contractor16.com",
+    "phone": "555-4513",
+    "address": {
+      "street": "1262 Hill Crest Dr",
+      "city": "Portland",
+      "state": "OR",
+      "zipCode": "97201",
+      "country": "USA"
+    },
+    "licenseNumber": "OR-ELC-2024-016",
+    "insuranceCertificate": "INS-CERT-2024-016",
     "specialties": [
       "Roofing",
       "Storm Damage Repair",
       "Emergency Services"
     ],
-    "rating": "4.2",
+    "rating": "3.7",
+    "isPreferred": false,
+    "isActive": false
+  },
+  {
+    "id": "contractor-017",
+    "name": "Maria Moore",
+    "businessName": "Moore Construction Co",
+    "email": "maria.moore@contractor17.com",
+    "phone": "555-9976",
+    "address": {
+      "street": "7075 Cedar Ln",
+      "city": "Salem",
+      "state": "OR",
+      "zipCode": "97301",
+      "country": "USA"
+    },
+    "licenseNumber": "OR-FIR-2024-017",
+    "insuranceCertificate": "INS-CERT-2024-017",
+    "specialties": [
+      "Emergency Services",
+      "24/7 Response",
+      "Disaster Recovery"
+    ],
+    "rating": "4.1",
     "isPreferred": false,
     "isActive": true
   },
   {
-    "id": "contractor-016",
-    "name": "Mark Wilson",
-    "businessName": "Wilson Building Services",
-    "email": "mark.wilson@contractor16.com",
-    "phone": "555-8135",
+    "id": "contractor-018",
+    "name": "Thomas Williams",
+    "businessName": "Williams Repair Specialists",
+    "email": "thomas.williams@contractor18.com",
+    "phone": "555-1408",
     "address": {
-      "street": "4018 Pine Rd",
+      "street": "4008 Pine Rd",
+      "city": "Tacoma",
+      "state": "WA",
+      "zipCode": "98401",
+      "country": "USA"
+    },
+    "licenseNumber": "WA-WTR-2024-018",
+    "insuranceCertificate": "INS-CERT-2024-018",
+    "specialties": [
+      "General Contracting",
+      "Structural Repair",
+      "Renovation"
+    ],
+    "rating": "3.6",
+    "isPreferred": false,
+    "isActive": true
+  },
+  {
+    "id": "contractor-019",
+    "name": "Thomas Martinez",
+    "businessName": "Martinez General Contractors",
+    "email": "thomas.martinez@contractor19.com",
+    "phone": "555-1190",
+    "address": {
+      "street": "9197 Valley Rd",
       "city": "Bend",
       "state": "OR",
       "zipCode": "97701",
       "country": "USA"
     },
-    "licenseNumber": "OR-WTR-2024-016",
-    "insuranceCertificate": "INS-CERT-2024-016",
+    "licenseNumber": "OR-ROF-2024-019",
+    "insuranceCertificate": "INS-CERT-2024-019",
+    "specialties": [
+      "Water Damage Restoration",
+      "Mold Remediation",
+      "Flood Cleanup"
+    ],
+    "rating": "5.0",
+    "isPreferred": true,
+    "isActive": true
+  },
+  {
+    "id": "contractor-020",
+    "name": "Amanda Thomas",
+    "businessName": "Thomas Building Services",
+    "email": "amanda.thomas@contractor20.com",
+    "phone": "555-8398",
+    "address": {
+      "street": "1542 Forest Ave",
+      "city": "Portland",
+      "state": "OR",
+      "zipCode": "97201",
+      "country": "USA"
+    },
+    "licenseNumber": "OR-ROF-2024-020",
+    "insuranceCertificate": "INS-CERT-2024-020",
+    "specialties": [
+      "General Contracting",
+      "Structural Repair",
+      "Renovation"
+    ],
+    "rating": "4.3",
+    "isPreferred": true,
+    "isActive": true
+  },
+  {
+    "id": "contractor-021",
+    "name": "Steven Jones",
+    "businessName": "Jones Professional Contractors",
+    "email": "steven.jones@contractor21.com",
+    "phone": "555-5384",
+    "address": {
+      "street": "6883 Park Pl",
+      "city": "Vancouver",
+      "state": "WA",
+      "zipCode": "98660",
+      "country": "USA"
+    },
+    "licenseNumber": "WA-PLB-2024-021",
+    "insuranceCertificate": "INS-CERT-2024-021",
+    "specialties": [
+      "HVAC Services",
+      "Mechanical Repair",
+      "System Installation"
+    ],
+    "rating": "4.5",
+    "isPreferred": false,
+    "isActive": true
+  },
+  {
+    "id": "contractor-022",
+    "name": "Jessica Lewis",
+    "businessName": "Lewis Emergency Restoration",
+    "email": "jessica.lewis@contractor22.com",
+    "phone": "555-7160",
+    "address": {
+      "street": "8415 Cedar Ln",
+      "city": "Salem",
+      "state": "OR",
+      "zipCode": "97301",
+      "country": "USA"
+    },
+    "licenseNumber": "OR-FIR-2024-022",
+    "insuranceCertificate": "INS-CERT-2024-022",
+    "specialties": [
+      "Electrical Services",
+      "Wiring Repair",
+      "System Upgrades"
+    ],
+    "rating": "3.9",
+    "isPreferred": false,
+    "isActive": true
+  },
+  {
+    "id": "contractor-023",
+    "name": "Mark White",
+    "businessName": "White Property Services",
+    "email": "mark.white@contractor23.com",
+    "phone": "555-3295",
+    "address": {
+      "street": "5785 Lincoln Ave",
+      "city": "Vancouver",
+      "state": "WA",
+      "zipCode": "98660",
+      "country": "USA"
+    },
+    "licenseNumber": "WA-PLB-2024-023",
+    "insuranceCertificate": "INS-CERT-2024-023",
+    "specialties": [
+      "Roofing",
+      "Storm Damage Repair",
+      "Emergency Services"
+    ],
+    "rating": "4.9",
+    "isPreferred": true,
+    "isActive": true
+  },
+  {
+    "id": "contractor-024",
+    "name": "Rebecca White",
+    "businessName": "White Construction Co",
+    "email": "rebecca.white@contractor24.com",
+    "phone": "555-7993",
+    "address": {
+      "street": "8174 Park Pl",
+      "city": "Olympia",
+      "state": "WA",
+      "zipCode": "98501",
+      "country": "USA"
+    },
+    "licenseNumber": "WA-FIR-2024-024",
+    "insuranceCertificate": "INS-CERT-2024-024",
+    "specialties": [
+      "Electrical Services",
+      "Wiring Repair",
+      "System Upgrades"
+    ],
+    "rating": "3.6",
+    "isPreferred": false,
+    "isActive": true
+  },
+  {
+    "id": "contractor-025",
+    "name": "Melissa Young",
+    "businessName": "Young Damage Repair Inc",
+    "email": "melissa.young@contractor25.com",
+    "phone": "555-9178",
+    "address": {
+      "street": "5809 Main St",
+      "city": "Eugene",
+      "state": "OR",
+      "zipCode": "97401",
+      "country": "USA"
+    },
+    "licenseNumber": "OR-PLB-2024-025",
+    "insuranceCertificate": "INS-CERT-2024-025",
+    "specialties": [
+      "Water Damage Restoration",
+      "Mold Remediation",
+      "Flood Cleanup"
+    ],
+    "rating": "4.9",
+    "isPreferred": false,
+    "isActive": true
+  },
+  {
+    "id": "contractor-026",
+    "name": "Emily Martin",
+    "businessName": "Martin Roofing Solutions",
+    "email": "emily.martin@contractor26.com",
+    "phone": "555-1203",
+    "address": {
+      "street": "1885 Lincoln Ave",
+      "city": "Vancouver",
+      "state": "WA",
+      "zipCode": "98660",
+      "country": "USA"
+    },
+    "licenseNumber": "WA-FIR-2024-026",
+    "insuranceCertificate": "INS-CERT-2024-026",
     "specialties": [
       "HVAC Services",
       "Mechanical Repair",
@@ -384,339 +624,99 @@
     "isActive": true
   },
   {
-    "id": "contractor-017",
-    "name": "Michael Anderson",
-    "businessName": "Anderson Repair Specialists",
-    "email": "michael.anderson@contractor17.com",
-    "phone": "555-4778",
+    "id": "contractor-027",
+    "name": "Stephanie Taylor",
+    "businessName": "Taylor Construction Co",
+    "email": "stephanie.taylor@contractor27.com",
+    "phone": "555-5893",
     "address": {
-      "street": "5319 River St",
+      "street": "4716 Pine Rd",
       "city": "Portland",
       "state": "OR",
       "zipCode": "97201",
       "country": "USA"
     },
-    "licenseNumber": "OR-ELC-2024-017",
-    "insuranceCertificate": "INS-CERT-2024-017",
+    "licenseNumber": "OR-FIR-2024-027",
+    "insuranceCertificate": "INS-CERT-2024-027",
     "specialties": [
-      "General Contracting",
-      "Structural Repair",
-      "Renovation"
+      "Exterior Siding",
+      "Window Replacement",
+      "Door Installation"
     ],
-    "rating": "4.3",
-    "isPreferred": false,
-    "isActive": true
-  },
-  {
-    "id": "contractor-018",
-    "name": "Jessica King",
-    "businessName": "King Restoration Services",
-    "email": "jessica.king@contractor18.com",
-    "phone": "555-8020",
-    "address": {
-      "street": "2819 Main St",
-      "city": "Bend",
-      "state": "OR",
-      "zipCode": "97701",
-      "country": "USA"
-    },
-    "licenseNumber": "OR-WTR-2024-018",
-    "insuranceCertificate": "INS-CERT-2024-018",
-    "specialties": [
-      "Plumbing Services",
-      "Pipe Repair",
-      "Water Line Installation"
-    ],
-    "rating": "4.5",
-    "isPreferred": false,
-    "isActive": true
-  },
-  {
-    "id": "contractor-019",
-    "name": "Donald Davis",
-    "businessName": "Davis Professional Contractors",
-    "email": "donald.davis@contractor19.com",
-    "phone": "555-2908",
-    "address": {
-      "street": "1010 Hill Crest Dr",
-      "city": "Portland",
-      "state": "OR",
-      "zipCode": "97201",
-      "country": "USA"
-    },
-    "licenseNumber": "OR-ELC-2024-019",
-    "insuranceCertificate": "INS-CERT-2024-019",
-    "specialties": [
-      "General Contracting",
-      "Structural Repair",
-      "Renovation"
-    ],
-    "rating": "4.3",
-    "isPreferred": true,
-    "isActive": true
-  },
-  {
-    "id": "contractor-020",
-    "name": "Anthony King",
-    "businessName": "King General Contractors",
-    "email": "anthony.king@contractor20.com",
-    "phone": "555-3244",
-    "address": {
-      "street": "2753 Park Pl",
-      "city": "Vancouver",
-      "state": "WA",
-      "zipCode": "98660",
-      "country": "USA"
-    },
-    "licenseNumber": "WA-ROF-2024-020",
-    "insuranceCertificate": "INS-CERT-2024-020",
-    "specialties": [
-      "Emergency Services",
-      "24/7 Response",
-      "Disaster Recovery"
-    ],
-    "rating": "4.7",
-    "isPreferred": false,
-    "isActive": true
-  },
-  {
-    "id": "contractor-021",
-    "name": "Matthew Jackson",
-    "businessName": "Jackson Professional Contractors",
-    "email": "matthew.jackson@contractor21.com",
-    "phone": "555-6113",
-    "address": {
-      "street": "9020 Main St",
-      "city": "Tacoma",
-      "state": "WA",
-      "zipCode": "98401",
-      "country": "USA"
-    },
-    "licenseNumber": "WA-ROF-2024-021",
-    "insuranceCertificate": "INS-CERT-2024-021",
-    "specialties": [
-      "Foundation Repair",
-      "Structural Engineering",
-      "Waterproofing"
-    ],
-    "rating": "4.5",
-    "isPreferred": true,
-    "isActive": true
-  },
-  {
-    "id": "contractor-022",
-    "name": "Melissa Davis",
-    "businessName": "Davis Damage Repair Inc",
-    "email": "melissa.davis@contractor22.com",
-    "phone": "555-1440",
-    "address": {
-      "street": "6761 Forest Ave",
-      "city": "Bend",
-      "state": "OR",
-      "zipCode": "97701",
-      "country": "USA"
-    },
-    "licenseNumber": "OR-PLB-2024-022",
-    "insuranceCertificate": "INS-CERT-2024-022",
-    "specialties": [
-      "Water Damage Restoration",
-      "Mold Remediation",
-      "Flood Cleanup"
-    ],
-    "rating": "4.0",
-    "isPreferred": false,
-    "isActive": true
-  },
-  {
-    "id": "contractor-023",
-    "name": "David Anderson",
-    "businessName": "Anderson Damage Repair Inc",
-    "email": "david.anderson@contractor23.com",
-    "phone": "555-4922",
-    "address": {
-      "street": "4128 River St",
-      "city": "Olympia",
-      "state": "WA",
-      "zipCode": "98501",
-      "country": "USA"
-    },
-    "licenseNumber": "WA-WTR-2024-023",
-    "insuranceCertificate": "INS-CERT-2024-023",
-    "specialties": [
-      "Foundation Repair",
-      "Structural Engineering",
-      "Waterproofing"
-    ],
-    "rating": "4.5",
-    "isPreferred": true,
-    "isActive": true
-  },
-  {
-    "id": "contractor-024",
-    "name": "Sarah Jones",
-    "businessName": "Jones Roofing Solutions",
-    "email": "sarah.jones@contractor24.com",
-    "phone": "555-3901",
-    "address": {
-      "street": "4716 Maple Dr",
-      "city": "Vancouver",
-      "state": "WA",
-      "zipCode": "98660",
-      "country": "USA"
-    },
-    "licenseNumber": "WA-ELC-2024-024",
-    "insuranceCertificate": "INS-CERT-2024-024",
-    "specialties": [
-      "HVAC Services",
-      "Mechanical Repair",
-      "System Installation"
-    ],
-    "rating": "4.9",
-    "isPreferred": false,
-    "isActive": true
-  },
-  {
-    "id": "contractor-025",
-    "name": "Matthew Scott",
-    "businessName": "Scott Restoration Services",
-    "email": "matthew.scott@contractor25.com",
-    "phone": "555-8301",
-    "address": {
-      "street": "9743 Elm St",
-      "city": "Seattle",
-      "state": "WA",
-      "zipCode": "98101",
-      "country": "USA"
-    },
-    "licenseNumber": "WA-WTR-2024-025",
-    "insuranceCertificate": "INS-CERT-2024-025",
-    "specialties": [
-      "HVAC Services",
-      "Mechanical Repair",
-      "System Installation"
-    ],
-    "rating": "4.4",
+    "rating": "3.5",
     "isPreferred": false,
     "isActive": false
   },
   {
-    "id": "contractor-026",
-    "name": "Angela Clark",
-    "businessName": "Clark Repair Specialists",
-    "email": "angela.clark@contractor26.com",
-    "phone": "555-8138",
-    "address": {
-      "street": "5711 Valley Rd",
-      "city": "Spokane",
-      "state": "WA",
-      "zipCode": "99201",
-      "country": "USA"
-    },
-    "licenseNumber": "WA-PLB-2024-026",
-    "insuranceCertificate": "INS-CERT-2024-026",
-    "specialties": [
-      "Electrical Services",
-      "Wiring Repair",
-      "System Upgrades"
-    ],
-    "rating": "4.8",
-    "isPreferred": false,
-    "isActive": true
-  },
-  {
-    "id": "contractor-027",
-    "name": "William Wright",
-    "businessName": "Wright Building Services",
-    "email": "william.wright@contractor27.com",
-    "phone": "555-3448",
-    "address": {
-      "street": "3512 Forest Ave",
-      "city": "Vancouver",
-      "state": "WA",
-      "zipCode": "98660",
-      "country": "USA"
-    },
-    "licenseNumber": "WA-ROF-2024-027",
-    "insuranceCertificate": "INS-CERT-2024-027",
-    "specialties": [
-      "Foundation Repair",
-      "Structural Engineering",
-      "Waterproofing"
-    ],
-    "rating": "4.8",
-    "isPreferred": false,
-    "isActive": true
-  },
-  {
     "id": "contractor-028",
-    "name": "Stephanie Brown",
-    "businessName": "Brown General Contractors",
-    "email": "stephanie.brown@contractor28.com",
-    "phone": "555-9022",
+    "name": "Christopher Davis",
+    "businessName": "Davis Roofing Solutions",
+    "email": "christopher.davis@contractor28.com",
+    "phone": "555-7224",
     "address": {
-      "street": "5860 Lake View Dr",
-      "city": "Vancouver",
-      "state": "WA",
-      "zipCode": "98660",
+      "street": "7440 Mountain Rd",
+      "city": "Salem",
+      "state": "OR",
+      "zipCode": "97301",
       "country": "USA"
     },
-    "licenseNumber": "WA-WTR-2024-028",
+    "licenseNumber": "OR-GEN-2024-028",
     "insuranceCertificate": "INS-CERT-2024-028",
     "specialties": [
       "HVAC Services",
       "Mechanical Repair",
       "System Installation"
     ],
-    "rating": "4.7",
-    "isPreferred": false,
+    "rating": "4.5",
+    "isPreferred": true,
     "isActive": true
   },
   {
     "id": "contractor-029",
-    "name": "Thomas Allen",
-    "businessName": "Allen Building Services",
-    "email": "thomas.allen@contractor29.com",
-    "phone": "555-1375",
+    "name": "Daniel Garcia",
+    "businessName": "Garcia Emergency Restoration",
+    "email": "daniel.garcia@contractor29.com",
+    "phone": "555-7178",
     "address": {
-      "street": "5981 Mountain Rd",
-      "city": "Eugene",
+      "street": "3483 Main St",
+      "city": "Salem",
       "state": "OR",
-      "zipCode": "97401",
+      "zipCode": "97301",
       "country": "USA"
     },
-    "licenseNumber": "OR-FIR-2024-029",
+    "licenseNumber": "OR-GEN-2024-029",
     "insuranceCertificate": "INS-CERT-2024-029",
     "specialties": [
-      "Exterior Siding",
-      "Window Replacement",
-      "Door Installation"
+      "Emergency Services",
+      "24/7 Response",
+      "Disaster Recovery"
     ],
-    "rating": "3.7",
-    "isPreferred": false,
+    "rating": "4.7",
+    "isPreferred": true,
     "isActive": true
   },
   {
     "id": "contractor-030",
-    "name": "Amanda Moore",
-    "businessName": "Moore Building Services",
-    "email": "amanda.moore@contractor30.com",
-    "phone": "555-3282",
+    "name": "Christopher Harris",
+    "businessName": "Harris Building Services",
+    "email": "christopher.harris@contractor30.com",
+    "phone": "555-8955",
     "address": {
-      "street": "8765 Lake View Dr",
-      "city": "Spokane",
-      "state": "WA",
-      "zipCode": "99201",
+      "street": "6299 Maple Dr",
+      "city": "Bend",
+      "state": "OR",
+      "zipCode": "97701",
       "country": "USA"
     },
-    "licenseNumber": "WA-PLB-2024-030",
+    "licenseNumber": "OR-PLB-2024-030",
     "insuranceCertificate": "INS-CERT-2024-030",
     "specialties": [
       "Roofing",
       "Storm Damage Repair",
       "Emergency Services"
     ],
-    "rating": "4.2",
-    "isPreferred": true,
-    "isActive": false
+    "rating": "4.6",
+    "isPreferred": false,
+    "isActive": true
   }
 ]
