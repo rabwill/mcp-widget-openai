@@ -1,17 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   FluentProvider,
   webLightTheme,
   webDarkTheme,
   Card,
-  Text,
   Badge,
   Button,
   Spinner,
   Input,
   Textarea,
-  Divider,
+  Select,
   makeStyles,
   tokens,
   shorthands,
@@ -19,12 +18,11 @@ import {
   Subtitle1,
   Subtitle2,
   Body1,
+  Body2,
   Caption1,
   MessageBar,
   MessageBarBody,
   Tooltip,
-  TabList,
-  Tab,
 } from '@fluentui/react-components';
 import {
   ArrowLeft24Regular,
@@ -32,39 +30,47 @@ import {
   Save24Regular,
   Dismiss24Regular,
   Location24Regular,
-  DocumentText24Regular,
-  Note24Regular,
-  Warning24Regular,
-  Clock24Regular,
+  Checkmark16Regular,
+  DismissCircle16Regular,
 } from '@fluentui/react-icons';
+
+// ─── Status Options ───
+const STATUS_OPTIONS = [
+  'Open - Claim is under investigation',
+  'Pending Documentation - Awaiting additional information',
+  'Under Investigation - Claim is being reviewed by adjusters',
+  'In Repair - Repairs in progress',
+  'Approved - Claim approved for payment',
+  'Closed - Claim settled and closed',
+];
 
 // ─── Styles ───
 const useStyles = makeStyles({
-  root: { padding: tokens.spacingHorizontalL },
+  root: { padding: tokens.spacingHorizontalM },
   centered: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '60px 20px',
+    padding: '40px 16px',
   },
   header: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: tokens.spacingHorizontalM,
-    marginBottom: tokens.spacingVerticalL,
-    paddingBottom: tokens.spacingVerticalM,
+    gap: tokens.spacingHorizontalS,
+    marginBottom: tokens.spacingVerticalM,
+    paddingBottom: tokens.spacingVerticalS,
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
   },
   headerLeft: {
     display: 'flex',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalM,
+    gap: tokens.spacingHorizontalS,
   },
   logo: {
-    width: '44px',
-    height: '44px',
+    width: '36px',
+    height: '36px',
     background: `linear-gradient(135deg, ${tokens.colorBrandBackground}, ${tokens.colorBrandBackgroundPressed})`,
     borderRadius: tokens.borderRadiusMedium,
     display: 'flex',
@@ -72,34 +78,35 @@ const useStyles = makeStyles({
     justifyContent: 'center',
     color: tokens.colorNeutralForegroundOnBrand,
     fontWeight: '700',
-    fontSize: '18px',
-    boxShadow: tokens.shadow4,
+    fontSize: '16px',
+    boxShadow: tokens.shadow2,
+    flexShrink: 0,
   },
   statsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-    gap: tokens.spacingHorizontalM,
-    marginBottom: tokens.spacingVerticalL,
+    gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
+    gap: tokens.spacingHorizontalS,
+    marginBottom: tokens.spacingVerticalM,
   },
   statCard: {
-    ...shorthands.padding(tokens.spacingVerticalM, tokens.spacingHorizontalM),
+    ...shorthands.padding(tokens.spacingVerticalS, tokens.spacingHorizontalS),
     textAlign: 'center' as const,
   },
-  statValue: { fontWeight: '700', fontSize: '1.5rem' },
+  statValue: { fontWeight: '700', fontSize: '1.25rem' },
   statLabel: {
     color: tokens.colorNeutralForeground3,
-    fontSize: '0.75rem',
+    fontSize: '0.7rem',
     textTransform: 'uppercase' as const,
     letterSpacing: '0.5px',
-    marginTop: '4px',
+    marginTop: '2px',
   },
   claimsList: {
     display: 'flex',
     flexDirection: 'column' as const,
-    gap: tokens.spacingVerticalM,
+    gap: tokens.spacingVerticalS,
   },
   claimCard: {
-    ...shorthands.padding(tokens.spacingVerticalM, tokens.spacingHorizontalM),
+    ...shorthands.padding(tokens.spacingVerticalS, tokens.spacingHorizontalM),
     cursor: 'pointer',
     ':hover': { boxShadow: tokens.shadow8 },
   },
@@ -107,109 +114,128 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: tokens.spacingHorizontalM,
-    marginBottom: tokens.spacingVerticalS,
+    gap: tokens.spacingHorizontalS,
+    marginBottom: '4px',
   },
   detailGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gridTemplateColumns: 'repeat(3, 1fr)',
     gap: tokens.spacingHorizontalS,
-    marginTop: tokens.spacingVerticalS,
+    marginTop: '4px',
   },
   damageTags: {
     display: 'flex',
     flexWrap: 'wrap' as const,
-    gap: '6px',
-    marginTop: tokens.spacingVerticalS,
+    gap: '4px',
+    marginTop: '4px',
   },
-  detailHeader: {
+  // Detail view — compact
+  detailBar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.spacingHorizontalS,
     background: `linear-gradient(135deg, ${tokens.colorBrandBackground}, ${tokens.colorBrandBackgroundPressed})`,
     color: tokens.colorNeutralForegroundOnBrand,
-    ...shorthands.padding(tokens.spacingVerticalL, tokens.spacingHorizontalL),
-    borderRadius: `${tokens.borderRadiusXLarge} ${tokens.borderRadiusXLarge} 0 0`,
+    ...shorthands.padding(tokens.spacingVerticalS, tokens.spacingHorizontalM),
+    borderRadius: `${tokens.borderRadiusMedium} ${tokens.borderRadiusMedium} 0 0`,
   },
   detailBody: {
-    ...shorthands.padding(tokens.spacingVerticalL, tokens.spacingHorizontalL),
+    ...shorthands.padding(tokens.spacingVerticalM, tokens.spacingHorizontalM),
   },
-  section: { marginBottom: tokens.spacingVerticalL },
-  sectionTitle: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
-    marginBottom: tokens.spacingVerticalM,
-    paddingBottom: tokens.spacingVerticalS,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-  },
-  infoGrid: {
+  formGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: tokens.spacingHorizontalM,
+    gridTemplateColumns: '1fr 1fr',
+    gap: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
   },
-  infoItem: {
-    backgroundColor: tokens.colorNeutralBackground2,
-    borderRadius: tokens.borderRadiusMedium,
-    ...shorthands.padding(tokens.spacingVerticalM, tokens.spacingHorizontalM),
-  },
-  infoLabel: {
-    color: tokens.colorNeutralForeground3,
-    fontSize: '0.75rem',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.5px',
-    marginBottom: '4px',
-  },
-  infoValue: { fontWeight: '500' },
-  infoValueLarge: {
-    fontWeight: '700',
-    fontSize: '1.5rem',
-    color: tokens.colorPaletteGreenForeground1,
-  },
-  mapContainer: {
-    width: '100%',
-    height: '260px',
-    borderRadius: tokens.borderRadiusMedium,
-    overflow: 'hidden',
-    border: `1px solid ${tokens.colorNeutralStroke2}`,
-    marginTop: tokens.spacingVerticalS,
-  },
-  descriptionBox: {
-    backgroundColor: tokens.colorNeutralBackground2,
-    borderRadius: tokens.borderRadiusMedium,
-    ...shorthands.padding(tokens.spacingVerticalM, tokens.spacingHorizontalM),
-    lineHeight: '1.6',
-  },
-  notesList: {
+  formField: {
     display: 'flex',
     flexDirection: 'column' as const,
-    gap: tokens.spacingVerticalS,
+    gap: '2px',
   },
-  noteItem: {
+  formFieldFull: {
     display: 'flex',
-    alignItems: 'flex-start',
-    gap: tokens.spacingHorizontalS,
-    backgroundColor: tokens.colorNeutralBackground2,
-    borderRadius: tokens.borderRadiusMedium,
-    ...shorthands.padding(tokens.spacingVerticalS, tokens.spacingHorizontalM),
+    flexDirection: 'column' as const,
+    gap: '2px',
+    gridColumn: '1 / -1',
   },
-  editRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
+  fieldLabel: {
+    color: tokens.colorNeutralForeground3,
+    fontSize: '0.7rem',
+    fontWeight: '600',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.4px',
   },
-  editField: { flex: 1 },
-  editActions: {
-    display: 'flex',
-    gap: tokens.spacingHorizontalXS,
-    marginTop: tokens.spacingVerticalM,
-    justifyContent: 'flex-end',
+  fieldValue: {
+    fontWeight: '500',
+    fontSize: '0.85rem',
+  },
+  fieldValueLarge: {
+    fontWeight: '700',
+    fontSize: '1.1rem',
+    color: tokens.colorPaletteGreenForeground1,
   },
   editableValue: {
     cursor: 'pointer',
-    borderRadius: tokens.borderRadiusMedium,
-    ...shorthands.padding('2px', '4px'),
+    borderRadius: '4px',
+    ...shorthands.padding('1px', '4px'),
+    marginLeft: '-4px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
     ':hover': {
       backgroundColor: tokens.colorNeutralBackground3,
       outline: `1px dashed ${tokens.colorBrandStroke1}`,
     },
+  },
+  editRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+  },
+  editField: { flex: 1, minWidth: 0 },
+  miniBtn: {
+    minWidth: 'auto',
+    ...shorthands.padding('2px'),
+  },
+  section: {
+    marginTop: tokens.spacingVerticalM,
+    paddingTop: tokens.spacingVerticalS,
+    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+  },
+  sectionTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalXS,
+    marginBottom: tokens.spacingVerticalS,
+  },
+  notesList: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '4px',
+  },
+  noteItem: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: tokens.spacingHorizontalXS,
+    backgroundColor: tokens.colorNeutralBackground2,
+    borderRadius: tokens.borderRadiusMedium,
+    ...shorthands.padding('4px', '8px'),
+    fontSize: '0.85rem',
+  },
+  editActions: {
+    display: 'flex',
+    gap: '4px',
+    marginTop: '4px',
+    justifyContent: 'flex-end',
+  },
+  mapContainer: {
+    width: '100%',
+    height: '180px',
+    borderRadius: tokens.borderRadiusMedium,
+    overflow: 'hidden',
+    border: `1px solid ${tokens.colorNeutralStroke2}`,
+    marginTop: tokens.spacingVerticalXS,
   },
 });
 
@@ -236,13 +262,16 @@ const getShortStatus = (s: string | undefined) => {
   return s.split(' - ')[0];
 };
 
-const statusBadgeColor = (s: string | undefined): 'warning' | 'informative' | 'success' | 'danger' | 'subtle' => {
+const statusBadgeColor = (
+  s: string | undefined
+): 'warning' | 'informative' | 'success' | 'danger' | 'subtle' => {
   const l = (s || '').toLowerCase();
   if (l.includes('pending')) return 'warning';
   if (l.includes('investigation') || l.includes('review')) return 'informative';
-  if (l.includes('approved') || l.includes('settled')) return 'success';
-  if (l.includes('denied') || l.includes('rejected')) return 'danger';
+  if (l.includes('approved')) return 'success';
+  if (l.includes('repair')) return 'informative';
   if (l.includes('closed')) return 'subtle';
+  if (l.includes('denied') || l.includes('rejected')) return 'danger';
   return 'warning';
 };
 
@@ -263,64 +292,58 @@ const extractData = (raw: any): any[] | null => {
 // ─── PropertyMap (pure SVG — no external requests) ───
 const PropertyMap: React.FC<{ address: string }> = ({ address }) => {
   const styles = useStyles();
-
   return (
     <div className={styles.mapContainer} style={{ position: 'relative', background: '#e8f0e8' }}>
       <svg
-        viewBox="0 0 600 260"
+        viewBox="0 0 600 180"
         width="100%"
         height="100%"
         preserveAspectRatio="xMidYMid slice"
         style={{ position: 'absolute', inset: 0 }}
       >
-        {/* Water */}
-        <rect width="600" height="260" fill="#d4e6f1" />
-        {/* Land mass */}
-        <path d="M0,40 Q80,10 160,30 T320,25 T480,35 T600,20 L600,260 L0,260Z" fill="#c8dcc8" />
-        <path d="M0,120 Q100,90 200,110 T400,100 T600,95 L600,260 L0,260Z" fill="#b8ccb8" />
-        {/* Roads */}
-        <line x1="0" y1="160" x2="600" y2="155" stroke="#999" strokeWidth="3" />
-        <line x1="150" y1="60" x2="160" y2="260" stroke="#999" strokeWidth="2" />
-        <line x1="300" y1="80" x2="310" y2="260" stroke="#999" strokeWidth="2" />
-        <line x1="450" y1="50" x2="440" y2="260" stroke="#999" strokeWidth="2" />
-        <line x1="0" y1="220" x2="600" y2="210" stroke="#aaa" strokeWidth="2" opacity="0.6" />
-        {/* Buildings */}
-        <rect x="170" y="130" width="20" height="20" rx="2" fill="#ddd" stroke="#bbb" strokeWidth="0.5" />
-        <rect x="250" y="170" width="30" height="15" rx="2" fill="#ddd" stroke="#bbb" strokeWidth="0.5" />
-        <rect x="320" y="120" width="25" height="25" rx="2" fill="#ddd" stroke="#bbb" strokeWidth="0.5" />
-        <rect x="400" y="165" width="18" height="18" rx="2" fill="#ddd" stroke="#bbb" strokeWidth="0.5" />
-        <rect x="200" y="195" width="22" height="14" rx="2" fill="#ddd" stroke="#bbb" strokeWidth="0.5" />
-        <rect x="370" y="105" width="15" height="20" rx="2" fill="#ddd" stroke="#bbb" strokeWidth="0.5" />
-        {/* Park / green area */}
-        <ellipse cx="500" cy="180" rx="40" ry="30" fill="#a3c9a3" opacity="0.6" />
-        {/* Map pin */}
-        <g transform="translate(300, 100)">
-          <ellipse cx="0" cy="30" rx="8" ry="3" fill="rgba(0,0,0,0.2)" />
-          <path d="M0,-25 C-12,-25 -18,-15 -18,-5 C-18,5 0,30 0,30 C0,30 18,5 18,-5 C18,-15 12,-25 0,-25Z" fill="#0078d4" />
-          <circle cx="0" cy="-6" r="6" fill="white" />
+        <rect width="600" height="180" fill="#d4e6f1" />
+        <path d="M0,30 Q80,10 160,25 T320,20 T480,28 T600,15 L600,180 L0,180Z" fill="#c8dcc8" />
+        <path d="M0,90 Q100,70 200,85 T400,75 T600,70 L600,180 L0,180Z" fill="#b8ccb8" />
+        <line x1="0" y1="110" x2="600" y2="108" stroke="#999" strokeWidth="2" />
+        <line x1="150" y1="40" x2="155" y2="180" stroke="#999" strokeWidth="1.5" />
+        <line x1="300" y1="50" x2="305" y2="180" stroke="#999" strokeWidth="1.5" />
+        <line x1="450" y1="35" x2="445" y2="180" stroke="#999" strokeWidth="1.5" />
+        <rect x="170" y="90" width="16" height="16" rx="2" fill="#ddd" stroke="#bbb" strokeWidth="0.5" />
+        <rect x="250" y="120" width="22" height="12" rx="2" fill="#ddd" stroke="#bbb" strokeWidth="0.5" />
+        <rect x="350" y="85" width="18" height="18" rx="2" fill="#ddd" stroke="#bbb" strokeWidth="0.5" />
+        <ellipse cx="500" cy="130" rx="30" ry="20" fill="#a3c9a3" opacity="0.6" />
+        <g transform="translate(300, 65)">
+          <ellipse cx="0" cy="22" rx="6" ry="2.5" fill="rgba(0,0,0,0.2)" />
+          <path d="M0,-18 C-9,-18 -14,-10 -14,-3 C-14,4 0,22 0,22 C0,22 14,4 14,-3 C14,-10 9,-18 0,-18Z" fill="#0078d4" />
+          <circle cx="0" cy="-4" r="5" fill="white" />
         </g>
       </svg>
-      {/* Address label */}
       <div
         style={{
           position: 'absolute',
-          bottom: 8,
-          left: 8,
-          right: 8,
+          bottom: 6,
+          left: 6,
+          right: 6,
           backgroundColor: 'rgba(255,255,255,0.92)',
-          borderRadius: '6px',
-          padding: '6px 10px',
-          fontSize: '0.8rem',
+          borderRadius: '4px',
+          padding: '4px 8px',
+          fontSize: '0.75rem',
           fontWeight: 500,
           color: '#333',
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+          gap: '4px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
         }}
       >
-        <Location24Regular style={{ fontSize: 16, color: '#0078d4', flexShrink: 0 }} />
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+        <Location24Regular style={{ fontSize: 14, color: '#0078d4', flexShrink: 0 }} />
+        <span
+          style={{
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap' as const,
+          }}
+        >
           {address || 'Property location'}
         </span>
       </div>
@@ -328,13 +351,13 @@ const PropertyMap: React.FC<{ address: string }> = ({ address }) => {
   );
 };
 
-// ─── EditableField ───
-const EditableField: React.FC<{
+// ─── InlineEdit (text / number / currency) ───
+const InlineEdit: React.FC<{
   value: any;
   onSave: (v: any) => void;
   type?: 'text' | 'number' | 'currency';
-  multiline?: boolean;
-}> = ({ value, onSave, type = 'text', multiline = false }) => {
+  large?: boolean;
+}> = ({ value, onSave, type = 'text', large = false }) => {
   const styles = useStyles();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(value ?? ''));
@@ -344,7 +367,8 @@ const EditableField: React.FC<{
   }, [value]);
 
   const commit = () => {
-    onSave(type === 'number' || type === 'currency' ? parseFloat(draft) || 0 : draft);
+    const v = type === 'number' || type === 'currency' ? parseFloat(draft) || 0 : draft;
+    onSave(v);
     setEditing(false);
   };
   const cancel = () => {
@@ -353,35 +377,18 @@ const EditableField: React.FC<{
   };
 
   if (!editing) {
+    const display = type === 'currency' ? formatCurrency(value) : value || '—';
     return (
       <Tooltip content="Click to edit" relationship="description">
-        <span className={styles.editableValue} onClick={() => setEditing(true)}>
-          {type === 'currency' ? formatCurrency(value) : value || '—'}{' '}
-          <Edit24Regular style={{ fontSize: 14, verticalAlign: 'middle', opacity: 0.5 }} />
+        <span
+          className={styles.editableValue}
+          style={large ? { fontWeight: 700, fontSize: '1.1rem', color: tokens.colorPaletteGreenForeground1 } : undefined}
+          onClick={() => setEditing(true)}
+        >
+          {display}{' '}
+          <Edit24Regular style={{ fontSize: 12, opacity: 0.4 }} />
         </span>
       </Tooltip>
-    );
-  }
-
-  if (multiline) {
-    return (
-      <div>
-        <Textarea
-          value={draft}
-          onChange={(_e, d) => setDraft(d.value)}
-          resize="vertical"
-          style={{ width: '100%' }}
-          autoFocus
-        />
-        <div className={styles.editActions}>
-          <Button appearance="primary" size="small" icon={<Save24Regular />} onClick={commit}>
-            Save
-          </Button>
-          <Button appearance="subtle" size="small" icon={<Dismiss24Regular />} onClick={cancel}>
-            Cancel
-          </Button>
-        </div>
-      </div>
     );
   }
 
@@ -389,6 +396,7 @@ const EditableField: React.FC<{
     <div className={styles.editRow}>
       <Input
         className={styles.editField}
+        size="small"
         value={draft}
         type={type === 'currency' || type === 'number' ? 'number' : 'text'}
         onChange={(_e, d) => setDraft(d.value)}
@@ -398,13 +406,156 @@ const EditableField: React.FC<{
           if (e.key === 'Escape') cancel();
         }}
       />
-      <Button appearance="primary" size="small" icon={<Save24Regular />} onClick={commit} />
-      <Button appearance="subtle" size="small" icon={<Dismiss24Regular />} onClick={cancel} />
+      <Button
+        className={styles.miniBtn}
+        appearance="primary"
+        size="small"
+        icon={<Checkmark16Regular />}
+        onClick={commit}
+      />
+      <Button
+        className={styles.miniBtn}
+        appearance="subtle"
+        size="small"
+        icon={<DismissCircle16Regular />}
+        onClick={cancel}
+      />
     </div>
   );
 };
 
-// ─── EditableList ───
+// ─── InlineMultiline (description) ───
+const InlineMultiline: React.FC<{
+  value: string;
+  onSave: (v: string) => void;
+}> = ({ value, onSave }) => {
+  const styles = useStyles();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? '');
+
+  useEffect(() => {
+    setDraft(value ?? '');
+  }, [value]);
+
+  const commit = () => {
+    onSave(draft);
+    setEditing(false);
+  };
+  const cancel = () => {
+    setDraft(value ?? '');
+    setEditing(false);
+  };
+
+  if (!editing) {
+    return (
+      <Tooltip content="Click to edit" relationship="description">
+        <div
+          className={styles.editableValue}
+          style={{ display: 'block', lineHeight: 1.5, fontSize: '0.85rem' }}
+          onClick={() => setEditing(true)}
+        >
+          {value || '—'}{' '}
+          <Edit24Regular style={{ fontSize: 12, opacity: 0.4, verticalAlign: 'middle' }} />
+        </div>
+      </Tooltip>
+    );
+  }
+
+  return (
+    <div>
+      <Textarea
+        size="small"
+        value={draft}
+        onChange={(_e, d) => setDraft(d.value)}
+        resize="vertical"
+        style={{ width: '100%', minHeight: '60px' }}
+        autoFocus
+      />
+      <div className={styles.editActions}>
+        <Button appearance="primary" size="small" icon={<Save24Regular />} onClick={commit}>
+          Save
+        </Button>
+        <Button appearance="subtle" size="small" icon={<Dismiss24Regular />} onClick={cancel}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+// ─── StatusDropdown ───
+const StatusDropdown: React.FC<{
+  value: string;
+  onSave: (v: string) => void;
+}> = ({ value, onSave }) => {
+  const styles = useStyles();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  const commit = () => {
+    if (draft !== value) onSave(draft);
+    setEditing(false);
+  };
+  const cancel = () => {
+    setDraft(value);
+    setEditing(false);
+  };
+
+  if (!editing) {
+    return (
+      <Tooltip content="Click to change status" relationship="description">
+        <span className={styles.editableValue} onClick={() => setEditing(true)}>
+          <Badge appearance="filled" color={statusBadgeColor(value)} size="medium">
+            {getShortStatus(value)}
+          </Badge>
+          <Edit24Regular style={{ fontSize: 12, opacity: 0.4 }} />
+        </span>
+      </Tooltip>
+    );
+  }
+
+  return (
+    <div className={styles.editRow}>
+      <Select
+        className={styles.editField}
+        size="small"
+        value={draft}
+        onChange={(_e, d) => setDraft(d.value)}
+        autoFocus
+      >
+        {STATUS_OPTIONS.map((s) => (
+          <option key={s} value={s}>
+            {s}
+          </option>
+        ))}
+        {/* include current value if not in the list */}
+        {!STATUS_OPTIONS.includes(value) && (
+          <option value={value}>{value}</option>
+        )}
+      </Select>
+      <Button
+        className={styles.miniBtn}
+        appearance="primary"
+        size="small"
+        icon={<Checkmark16Regular />}
+        onClick={commit}
+      />
+      <Button
+        className={styles.miniBtn}
+        appearance="subtle"
+        size="small"
+        icon={<DismissCircle16Regular />}
+        onClick={cancel}
+      />
+    </div>
+  );
+};
+
+// ─── EditableList (notes / damageTypes) ───
 const EditableList: React.FC<{
   items: string[];
   onSave: (v: string[]) => void;
@@ -437,22 +588,24 @@ const EditableList: React.FC<{
         <div className={styles.notesList}>
           {(items || []).map((item, i) => (
             <div key={i} className={styles.noteItem}>
-              <Body1>• {item}</Body1>
+              • {item}
             </div>
           ))}
+          {(!items || items.length === 0) && (
+            <Caption1 style={{ color: tokens.colorNeutralForeground4 }}>None</Caption1>
+          )}
         </div>
-        <div style={{ marginTop: tokens.spacingVerticalS }}>
-          <Tooltip content="Click to edit" relationship="description">
-            <Button
-              appearance="subtle"
-              size="small"
-              icon={<Edit24Regular />}
-              onClick={() => setEditing(true)}
-            >
-              Edit {label}
-            </Button>
-          </Tooltip>
-        </div>
+        <Tooltip content={`Edit ${label.toLowerCase()}`} relationship="description">
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<Edit24Regular />}
+            onClick={() => setEditing(true)}
+            style={{ marginTop: '4px' }}
+          >
+            Edit
+          </Button>
+        </Tooltip>
       </div>
     );
   }
@@ -460,11 +613,12 @@ const EditableList: React.FC<{
   return (
     <div>
       <Textarea
+        size="small"
         value={draft}
         onChange={(_e, d) => setDraft(d.value)}
         resize="vertical"
         placeholder={`One ${label.toLowerCase().replace(/s$/, '')} per line`}
-        style={{ width: '100%', minHeight: '80px' }}
+        style={{ width: '100%', minHeight: '60px' }}
         autoFocus
       />
       <div className={styles.editActions}>
@@ -492,11 +646,11 @@ const StatsBar: React.FC<{ claims: any[] }> = ({ claims }) => {
   return (
     <div className={styles.statsGrid}>
       {[
-        { label: 'Total Claims', value: total, color: tokens.colorBrandForeground1 },
+        { label: 'Total', value: total, color: tokens.colorBrandForeground1 },
         { label: 'Pending', value: pending, color: tokens.colorPaletteYellowForeground1 },
-        { label: 'Under Review', value: investigation, color: tokens.colorBrandForeground1 },
+        { label: 'Review', value: investigation, color: tokens.colorBrandForeground1 },
         {
-          label: 'Total Value',
+          label: 'Value',
           value: formatCurrency(totalValue),
           color: tokens.colorPaletteGreenForeground1,
         },
@@ -521,25 +675,25 @@ const ClaimCard: React.FC<{ claim: any; onClick: (c: any) => void }> = ({ claim,
         <div>
           <Subtitle1>{claim.claimNumber}</Subtitle1>
           <Caption1 style={{ display: 'block', color: tokens.colorNeutralForeground3 }}>
-            {claim.policyHolderName} &bull; {claim.policyHolderEmail}
+            {claim.policyHolderName}
           </Caption1>
         </div>
-        <Badge appearance="filled" color={statusBadgeColor(claim.status)}>
+        <Badge appearance="filled" color={statusBadgeColor(claim.status)} size="small">
           {getShortStatus(claim.status)}
         </Badge>
       </div>
       <div className={styles.detailGrid}>
         <div>
           <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>Property</Caption1>
-          <Body1 style={{ display: 'block' }}>{claim.property}</Body1>
+          <Body2 style={{ display: 'block' }}>{claim.property}</Body2>
         </div>
         <div>
-          <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>Date of Loss</Caption1>
-          <Body1 style={{ display: 'block' }}>{formatDate(claim.dateOfLoss)}</Body1>
+          <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>Loss Date</Caption1>
+          <Body2 style={{ display: 'block' }}>{formatDate(claim.dateOfLoss)}</Body2>
         </div>
         <div>
-          <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>Estimated Loss</Caption1>
-          <Body1
+          <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>Est. Loss</Caption1>
+          <Body2
             style={{
               display: 'block',
               color: tokens.colorPaletteGreenForeground1,
@@ -547,13 +701,13 @@ const ClaimCard: React.FC<{ claim: any; onClick: (c: any) => void }> = ({ claim,
             }}
           >
             {formatCurrency(claim.estimatedLoss)}
-          </Body1>
+          </Body2>
         </div>
       </div>
       {claim.damageTypes && claim.damageTypes.length > 0 && (
         <div className={styles.damageTags}>
           {claim.damageTypes.map((d: string, i: number) => (
-            <Badge key={i} appearance="outline">
+            <Badge key={i} appearance="outline" size="small">
               {d}
             </Badge>
           ))}
@@ -563,7 +717,7 @@ const ClaimCard: React.FC<{ claim: any; onClick: (c: any) => void }> = ({ claim,
   );
 };
 
-// ─── ClaimDetailView ───
+// ─── ClaimDetailView (compact, single-scroll, no tabs) ───
 const ClaimDetailView: React.FC<{ claim: any; onBack: () => void }> = ({
   claim: initialClaim,
   onBack,
@@ -572,50 +726,43 @@ const ClaimDetailView: React.FC<{ claim: any; onBack: () => void }> = ({
   const [claim, setClaim] = useState(initialClaim);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ type: string; text: string } | null>(null);
-  const [activeTab, setActiveTab] = useState('overview');
 
   const updateField = async (field: string, value: any) => {
-    setClaim((prev: any) => ({ ...prev, [field]: value, updatedAt: new Date().toISOString() }));
+    const prev = { ...claim };
+    setClaim((p: any) => ({ ...p, [field]: value, updatedAt: new Date().toISOString() }));
     setSaving(true);
     setSaveMsg(null);
 
     try {
-      const baseUrl = window.location.origin;
-      const res = await fetch(`${baseUrl}/mcp`, {
+      const baseUrl = (window as any).__MCP_SERVER_URL__ || window.location.origin;
+      const res = await fetch(`${baseUrl}/mcp/tools/call`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: Date.now(),
-          method: 'tools/call',
-          params: {
-            name: 'update_claim',
-            arguments: { claimId: claim.id, [field]: value },
-          },
+          name: 'update_claim',
+          arguments: { claimId: claim.id, [field]: value },
         }),
       });
-      const json = await res.json();
-      if (json.result?.structuredContent?.success) {
-        setClaim(json.result.structuredContent.data);
-        setSaveMsg({ type: 'success', text: `${field} updated` });
-      } else if (json.result?.content?.[0]?.text) {
-        try {
-          const parsed = JSON.parse(json.result.content[0].text);
-          if (parsed.success && parsed.data) {
-            setClaim(parsed.data);
-            setSaveMsg({ type: 'success', text: `${field} updated` });
-          } else {
-            throw new Error('Update failed');
-          }
-        } catch {
-          setSaveMsg({ type: 'success', text: `${field} updated locally` });
-        }
-      } else {
-        setSaveMsg({ type: 'success', text: `${field} updated locally` });
+
+      if (!res.ok) {
+        const text = await res.text();
+        let msg = `Server returned ${res.status}`;
+        try { msg = JSON.parse(text).error || msg; } catch {}
+        throw new Error(msg);
       }
-    } catch (err) {
+
+      const json = await res.json();
+
+      if (json.success && json.data) {
+        setClaim(json.data);
+        setSaveMsg({ type: 'success', text: `${field} updated` });
+      } else {
+        throw new Error(json.error || 'Update failed');
+      }
+    } catch (err: any) {
       console.error('Update failed:', err);
-      setSaveMsg({ type: 'warning', text: `${field} saved locally (sync pending)` });
+      setSaveMsg({ type: 'warning', text: `Save failed: ${err.message || 'unknown error'}` });
+      setClaim(prev);
     } finally {
       setSaving(false);
       setTimeout(() => setSaveMsg(null), 3000);
@@ -626,15 +773,16 @@ const ClaimDetailView: React.FC<{ claim: any; onBack: () => void }> = ({
     <div>
       <Button
         appearance="subtle"
+        size="small"
         icon={<ArrowLeft24Regular />}
         onClick={onBack}
-        style={{ marginBottom: tokens.spacingVerticalM }}
+        style={{ marginBottom: tokens.spacingVerticalXS }}
       >
-        Back to Claims
+        Back
       </Button>
 
       {saveMsg && (
-        <div style={{ marginBottom: tokens.spacingVerticalM }}>
+        <div style={{ marginBottom: tokens.spacingVerticalXS }}>
           <MessageBar intent={saveMsg.type === 'success' ? 'success' : 'warning'}>
             <MessageBarBody>{saveMsg.text}</MessageBarBody>
           </MessageBar>
@@ -642,187 +790,107 @@ const ClaimDetailView: React.FC<{ claim: any; onBack: () => void }> = ({
       )}
 
       <Card style={{ overflow: 'hidden' }}>
-        {/* Header */}
-        <div className={styles.detailHeader}>
-          <Title3 style={{ color: tokens.colorNeutralForegroundOnBrand }}>
-            {claim.claimNumber}
-          </Title3>
-          <Body1
-            style={{
-              color: 'rgba(255,255,255,0.9)',
-              display: 'block',
-              marginTop: '4px',
-            }}
-          >
-            {claim.policyHolderName}
-          </Body1>
-          <div style={{ marginTop: tokens.spacingVerticalS }}>
-            <Badge appearance="filled" color={statusBadgeColor(claim.status)} size="large">
-              {getShortStatus(claim.status)}
-            </Badge>
-            {saving && <Spinner size="tiny" style={{ marginLeft: 8 }} />}
+        {/* Compact header bar */}
+        <div className={styles.detailBar}>
+          <div>
+            <Subtitle1 style={{ color: 'inherit' }}>{claim.claimNumber}</Subtitle1>
+            <Caption1 style={{ color: 'rgba(255,255,255,0.85)', display: 'block' }}>
+              {claim.policyHolderName} &bull; {claim.policyNumber}
+            </Caption1>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {saving && <Spinner size="tiny" />}
           </div>
         </div>
 
-        {/* Tabs */}
-        <div style={{ borderBottom: `1px solid ${tokens.colorNeutralStroke2}` }}>
-          <TabList
-            selectedValue={activeTab}
-            onTabSelect={(_: any, d: any) => setActiveTab(d.value)}
-          >
-            <Tab value="overview">Overview</Tab>
-            <Tab value="property">Property & Map</Tab>
-            <Tab value="details">Details & Notes</Tab>
-          </TabList>
-        </div>
-
         <div className={styles.detailBody}>
-          {/* Overview tab */}
-          {activeTab === 'overview' && (
-            <>
-              <div className={styles.section}>
-                <div className={styles.sectionTitle}>
-                  <DocumentText24Regular />
-                  <Subtitle2>Claim Overview</Subtitle2>
-                </div>
-                <div className={styles.infoGrid}>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoLabel}>Claim ID</div>
-                    <div className={styles.infoValue}>{claim.id}</div>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoLabel}>Policy Number</div>
-                    <div className={styles.infoValue}>{claim.policyNumber}</div>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoLabel}>Estimated Loss</div>
-                    <div className={styles.infoValueLarge}>
-                      <EditableField
-                        value={claim.estimatedLoss}
-                        type="currency"
-                        onSave={(v) => updateField('estimatedLoss', v)}
-                      />
-                    </div>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoLabel}>Adjuster Assigned</div>
-                    <div className={styles.infoValue}>
-                      <EditableField
-                        value={claim.adjusterAssigned || 'Unassigned'}
-                        onSave={(v) => updateField('adjusterAssigned', v)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
+          {/* Status + key fields grid */}
+          <div className={styles.formGrid}>
+            <div className={styles.formField}>
+              <div className={styles.fieldLabel}>Status</div>
+              <StatusDropdown value={claim.status} onSave={(v) => updateField('status', v)} />
+            </div>
+            <div className={styles.formField}>
+              <div className={styles.fieldLabel}>Estimated Loss</div>
+              <InlineEdit
+                value={claim.estimatedLoss}
+                type="currency"
+                large
+                onSave={(v) => updateField('estimatedLoss', v)}
+              />
+            </div>
+            <div className={styles.formField}>
+              <div className={styles.fieldLabel}>Adjuster</div>
+              <InlineEdit
+                value={claim.adjusterAssigned || 'Unassigned'}
+                onSave={(v) => updateField('adjusterAssigned', v)}
+              />
+            </div>
+            <div className={styles.formField}>
+              <div className={styles.fieldLabel}>Date of Loss</div>
+              <div className={styles.fieldValue}>{formatDate(claim.dateOfLoss)}</div>
+            </div>
+            <div className={styles.formField}>
+              <div className={styles.fieldLabel}>Date Reported</div>
+              <div className={styles.fieldValue}>{formatDate(claim.dateReported)}</div>
+            </div>
+            <div className={styles.formField}>
+              <div className={styles.fieldLabel}>Last Updated</div>
+              <div className={styles.fieldValue}>{formatDate(claim.updatedAt)}</div>
+            </div>
+          </div>
 
-              <div className={styles.section}>
-                <div className={styles.sectionTitle}>
-                  <Warning24Regular />
-                  <Subtitle2>Status</Subtitle2>
-                </div>
-                <div className={styles.descriptionBox}>
-                  <EditableField
-                    value={claim.status}
-                    onSave={(v) => updateField('status', v)}
-                  />
-                </div>
-              </div>
+          {/* Description */}
+          <div className={styles.section}>
+            <div className={styles.sectionTitle}>
+              <Subtitle2>Description</Subtitle2>
+            </div>
+            <InlineMultiline
+              value={claim.description}
+              onSave={(v) => updateField('description', v)}
+            />
+          </div>
 
-              <div className={styles.section}>
-                <div className={styles.sectionTitle}>
-                  <Clock24Regular />
-                  <Subtitle2>Timeline</Subtitle2>
-                </div>
-                <div className={styles.infoGrid}>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoLabel}>Date of Loss</div>
-                    <div className={styles.infoValue}>{formatDate(claim.dateOfLoss)}</div>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoLabel}>Date Reported</div>
-                    <div className={styles.infoValue}>{formatDate(claim.dateReported)}</div>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoLabel}>Created</div>
-                    <div className={styles.infoValue}>{formatDate(claim.createdAt)}</div>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoLabel}>Last Updated</div>
-                    <div className={styles.infoValue}>{formatDate(claim.updatedAt)}</div>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
+          {/* Property + Map */}
+          <div className={styles.section}>
+            <div className={styles.sectionTitle}>
+              <Location24Regular style={{ fontSize: 18 }} />
+              <Subtitle2>Property</Subtitle2>
+            </div>
+            <div className={styles.fieldValue} style={{ marginBottom: '4px' }}>
+              {claim.property}
+            </div>
+            <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>
+              {claim.policyHolderEmail}
+            </Caption1>
+            <PropertyMap address={claim.property} />
+          </div>
 
-          {/* Property & Map tab */}
-          {activeTab === 'property' && (
+          {/* Damage Types */}
+          {claim.damageTypes && claim.damageTypes.length > 0 && (
             <div className={styles.section}>
               <div className={styles.sectionTitle}>
-                <Location24Regular />
-                <Subtitle2>Property Location</Subtitle2>
+                <Subtitle2>Damage Types</Subtitle2>
               </div>
-              <div className={styles.infoGrid}>
-                <div className={styles.infoItem}>
-                  <div className={styles.infoLabel}>Property Address</div>
-                  <div className={styles.infoValue}>{claim.property}</div>
-                </div>
-                <div className={styles.infoItem}>
-                  <div className={styles.infoLabel}>Policy Holder</div>
-                  <div className={styles.infoValue}>{claim.policyHolderName}</div>
-                </div>
-                <div className={styles.infoItem}>
-                  <div className={styles.infoLabel}>Email</div>
-                  <div className={styles.infoValue}>{claim.policyHolderEmail}</div>
-                </div>
-              </div>
-              <PropertyMap address={claim.property} />
+              <EditableList
+                items={claim.damageTypes}
+                label="Damage Types"
+                onSave={(v) => updateField('damageTypes', v)}
+              />
             </div>
           )}
 
-          {/* Details & Notes tab */}
-          {activeTab === 'details' && (
-            <>
-              <div className={styles.section}>
-                <div className={styles.sectionTitle}>
-                  <DocumentText24Regular />
-                  <Subtitle2>Description</Subtitle2>
-                </div>
-                <EditableField
-                  value={claim.description}
-                  multiline
-                  onSave={(v) => updateField('description', v)}
-                />
-              </div>
-
-              {claim.damageTypes && claim.damageTypes.length > 0 && (
-                <div className={styles.section}>
-                  <div className={styles.sectionTitle}>
-                    <Warning24Regular />
-                    <Subtitle2>Damage Types</Subtitle2>
-                  </div>
-                  <EditableList
-                    items={claim.damageTypes}
-                    label="Damage Types"
-                    onSave={(v) => updateField('damageTypes', v)}
-                  />
-                </div>
-              )}
-
-              <div className={styles.section}>
-                <div className={styles.sectionTitle}>
-                  <Note24Regular />
-                  <Subtitle2>Notes</Subtitle2>
-                </div>
-                <EditableList
-                  items={claim.notes}
-                  label="Notes"
-                  onSave={(v) => updateField('notes', v)}
-                />
-              </div>
-            </>
-          )}
+          {/* Notes */}
+          <div className={styles.section}>
+            <div className={styles.sectionTitle}>
+              <Subtitle2>Notes</Subtitle2>
+            </div>
+            <EditableList
+              items={claim.notes}
+              label="Notes"
+              onSave={(v) => updateField('notes', v)}
+            />
+          </div>
         </div>
       </Card>
     </div>
@@ -908,7 +976,7 @@ const App = () => {
                   <Caption1
                     style={{ display: 'block', color: tokens.colorNeutralForeground3 }}
                   >
-                    Viewing {selected.claimNumber}
+                    Editing {selected.claimNumber}
                   </Caption1>
                 </div>
               </div>

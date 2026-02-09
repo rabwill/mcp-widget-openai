@@ -1090,6 +1090,22 @@ const allowedOrigins = [
   'https://127.0.0.1:',
   // Add VS Code dev server origins
   'vscode-webview://',
+  // ChatGPT widget iframe origins
+  'https://widgetcopilot.net',
+  'https://www.widgetcopilot.net',
+  '.widgetcopilot.net',
+  'https://chatgpt.com',
+  'https://chat.openai.com',
+  '.chatgpt.com',
+  '.openai.com',
+  // Additional OpenAI platform domains used by widgets
+  '.oaiusercontent.com',
+  '.oaistatic.com',
+  '.openai.co',
+  'https://oaiusercontent.com',
+  'https://cdn.oaistatic.com',
+  '.oaiusercontent.net',
+  '.oaistatic.net',
   // Common development URLs
   'https://login.microsoftonline.com',
   'https://login.live.com',
@@ -1102,24 +1118,21 @@ const allowedOrigins = [
 
 // Origin validation middleware to prevent DNS rebinding attacks
 const validateOrigin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  // Always allow CORS preflight requests through — the cors() middleware handles them
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+
   const origin = req.get('Origin') || req.get('Referer');
   
   // Allow requests without origin (direct API calls, curl, etc.)
-  if (!origin) {
+  // Also allow "null" origin from sandboxed iframes (e.g. ChatGPT widget)
+  if (!origin || origin === 'null') {
     return next();
   }
 
   // Check if origin is in allowlist or matches VS Code webview pattern
-  const isAllowed = allowedOrigins.some(allowed => {
-    if (allowed.endsWith('://')) {
-      return origin.startsWith(allowed);
-    }
-    // Handle localhost/127.0.0.1 with any port (e.g., "http://localhost:")
-    if (allowed.endsWith(':')) {
-      return origin.startsWith(allowed);
-    }
-    return origin === allowed || origin.startsWith(allowed + '/');
-  });
+  const isAllowed = isOriginAllowed(origin);
 
   if (!isAllowed) {
     logger.warn(`Rejected request from unauthorized origin: ${origin}`);
@@ -1132,31 +1145,45 @@ const validateOrigin = (req: express.Request, res: express.Response, next: expre
   next();
 };
 
+// Shared origin check used by both validateOrigin and cors()
+function isOriginAllowed(origin: string): boolean {
+  return allowedOrigins.some(allowed => {
+    if (allowed.endsWith('://')) {
+      return origin.startsWith(allowed);
+    }
+    // Handle localhost/127.0.0.1 with any port (e.g., "http://localhost:")
+    if (allowed.endsWith(':')) {
+      return origin.startsWith(allowed);
+    }
+    // Wildcard subdomain match (e.g., ".widgetcopilot.net" matches "https://abc.widgetcopilot.net")
+    if (allowed.startsWith('.')) {
+      try {
+        const hostname = new URL(origin).hostname;
+        return hostname.endsWith(allowed) || hostname === allowed.slice(1);
+      } catch { return false; }
+    }
+    return origin === allowed || origin.startsWith(allowed + '/');
+  });
+}
+
 // Middleware
 app.use(validateOrigin);
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, curl, Postman, etc.)
-    if (!origin) return callback(null, true);
+    // Also allow "null" origin from sandboxed iframes (e.g. ChatGPT widget)
+    if (!origin || origin === 'null') return callback(null, true);
     
-    const isAllowed = allowedOrigins.some(allowed => {
-      if (allowed.endsWith('://')) {
-        return origin.startsWith(allowed);
-      }
-      // Handle localhost/127.0.0.1 with any port (e.g., "http://localhost:")
-      if (allowed.endsWith(':')) {
-        return origin.startsWith(allowed);
-      }
-      return origin === allowed || origin.startsWith(allowed + '/');
-    });
-    
-    if (isAllowed) {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
+      logger.warn(`CORS rejected origin: ${origin}`);
       callback(new Error('Not allowed by CORS policy'));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 app.use(express.json());
 
@@ -1187,7 +1214,13 @@ app.get('/mcp/resources/widget/claims.html', (req, res) => {
 app.get('/mcp/resources/widget/claim-dashboard.html', (req, res) => {
   res.setHeader('Content-Type', 'text/html+skybridge');
   res.setHeader('X-Widget-Prefers-Border', 'true');
-  res.send(dashboardWidgetHtml);
+  // Inject the MCP server URL so the widget can call back for updates
+  const serverUrl = `${req.protocol}://${req.get('host')}`;
+  const html = dashboardWidgetHtml.replace(
+    '</head>',
+    `<script>window.__MCP_SERVER_URL__="${serverUrl}";</script></head>`
+  );
+  res.send(html);
 });
 
 // MCP Resources endpoint for OpenAI Apps SDK
@@ -1395,12 +1428,18 @@ app.post('/mcp/messages', async (req, res) => {
             ]
           };
         } else if (uri === 'ui://widget/claim-dashboard.html') {
+          // Inject MCP server URL so the widget can call back for updates
+          const serverUrl = `${req.protocol}://${req.get('host')}`;
+          const injectedHtml = dashboardWidgetHtml.replace(
+            '</head>',
+            `<script>window.__MCP_SERVER_URL__="${serverUrl}";</script></head>`
+          );
           result = {
             contents: [
               {
                 uri: 'ui://widget/claim-dashboard.html',
                 mimeType: 'text/html+skybridge',
-                text: dashboardWidgetHtml,
+                text: injectedHtml,
                 _meta: {
                   'openai/widgetPrefersBorder': true,
                 },
