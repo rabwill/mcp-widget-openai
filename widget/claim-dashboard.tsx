@@ -37,24 +37,6 @@ import {
   Warning24Regular,
   Clock24Regular,
 } from '@fluentui/react-icons';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// ─── Fix Leaflet default icon paths (broken by bundlers) ───
-// Use inline SVG data URIs so there are zero external requests
-const markerSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='41' viewBox='0 0 25 41'%3E%3Cpath d='M12.5 0C5.6 0 0 5.6 0 12.5c0 2.4.7 4.7 1.9 6.6L12.5 41l10.6-21.9c1.2-1.9 1.9-4.2 1.9-6.6C25 5.6 19.4 0 12.5 0z' fill='%232D89EF'/%3E%3Ccircle cx='12.5' cy='12.5' r='5' fill='white'/%3E%3C/svg%3E`;
-const shadowSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='41' height='41' viewBox='0 0 41 41'%3E%3Cellipse cx='13' cy='38' rx='13' ry='3' fill='rgba(0,0,0,0.2)'/%3E%3C/svg%3E`;
-
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconUrl: markerSvg,
-  iconRetinaUrl: markerSvg,
-  shadowUrl: shadowSvg,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
 
 // ─── Styles ───
 const useStyles = makeStyles({
@@ -278,48 +260,72 @@ const extractData = (raw: any): any[] | null => {
   return null;
 };
 
-// ─── PropertyMap ───
-// Static coordinates for all properties (Redmond, WA area)
-const STATIC_LOCATION: [number, number] = [47.6740, -122.1215];
-
+// ─── PropertyMap (pure SVG — no external requests) ───
 const PropertyMap: React.FC<{ address: string }> = ({ address }) => {
   const styles = useStyles();
-  const mapRef = useRef<HTMLDivElement>(null);
-  const leafletMap = useRef<L.Map | null>(null);
 
-  useEffect(() => {
-    if (!mapRef.current) return;
-
-    // Small delay so the tab container has non-zero dimensions
-    const timerId = setTimeout(() => {
-      if (leafletMap.current) {
-        leafletMap.current.remove();
-        leafletMap.current = null;
-      }
-      if (!mapRef.current) return;
-
-      const map = L.map(mapRef.current).setView(STATIC_LOCATION, 14);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
-      }).addTo(map);
-      L.marker(STATIC_LOCATION)
-        .addTo(map)
-        .bindPopup(address || 'Property location')
-        .openPopup();
-      leafletMap.current = map;
-      requestAnimationFrame(() => map.invalidateSize());
-    }, 150);
-
-    return () => {
-      clearTimeout(timerId);
-      if (leafletMap.current) {
-        leafletMap.current.remove();
-        leafletMap.current = null;
-      }
-    };
-  }, [address]);
-
-  return <div ref={mapRef} className={styles.mapContainer} />;
+  return (
+    <div className={styles.mapContainer} style={{ position: 'relative', background: '#e8f0e8' }}>
+      <svg
+        viewBox="0 0 600 260"
+        width="100%"
+        height="100%"
+        preserveAspectRatio="xMidYMid slice"
+        style={{ position: 'absolute', inset: 0 }}
+      >
+        {/* Water */}
+        <rect width="600" height="260" fill="#d4e6f1" />
+        {/* Land mass */}
+        <path d="M0,40 Q80,10 160,30 T320,25 T480,35 T600,20 L600,260 L0,260Z" fill="#c8dcc8" />
+        <path d="M0,120 Q100,90 200,110 T400,100 T600,95 L600,260 L0,260Z" fill="#b8ccb8" />
+        {/* Roads */}
+        <line x1="0" y1="160" x2="600" y2="155" stroke="#999" strokeWidth="3" />
+        <line x1="150" y1="60" x2="160" y2="260" stroke="#999" strokeWidth="2" />
+        <line x1="300" y1="80" x2="310" y2="260" stroke="#999" strokeWidth="2" />
+        <line x1="450" y1="50" x2="440" y2="260" stroke="#999" strokeWidth="2" />
+        <line x1="0" y1="220" x2="600" y2="210" stroke="#aaa" strokeWidth="2" opacity="0.6" />
+        {/* Buildings */}
+        <rect x="170" y="130" width="20" height="20" rx="2" fill="#ddd" stroke="#bbb" strokeWidth="0.5" />
+        <rect x="250" y="170" width="30" height="15" rx="2" fill="#ddd" stroke="#bbb" strokeWidth="0.5" />
+        <rect x="320" y="120" width="25" height="25" rx="2" fill="#ddd" stroke="#bbb" strokeWidth="0.5" />
+        <rect x="400" y="165" width="18" height="18" rx="2" fill="#ddd" stroke="#bbb" strokeWidth="0.5" />
+        <rect x="200" y="195" width="22" height="14" rx="2" fill="#ddd" stroke="#bbb" strokeWidth="0.5" />
+        <rect x="370" y="105" width="15" height="20" rx="2" fill="#ddd" stroke="#bbb" strokeWidth="0.5" />
+        {/* Park / green area */}
+        <ellipse cx="500" cy="180" rx="40" ry="30" fill="#a3c9a3" opacity="0.6" />
+        {/* Map pin */}
+        <g transform="translate(300, 100)">
+          <ellipse cx="0" cy="30" rx="8" ry="3" fill="rgba(0,0,0,0.2)" />
+          <path d="M0,-25 C-12,-25 -18,-15 -18,-5 C-18,5 0,30 0,30 C0,30 18,5 18,-5 C18,-15 12,-25 0,-25Z" fill="#0078d4" />
+          <circle cx="0" cy="-6" r="6" fill="white" />
+        </g>
+      </svg>
+      {/* Address label */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 8,
+          left: 8,
+          right: 8,
+          backgroundColor: 'rgba(255,255,255,0.92)',
+          borderRadius: '6px',
+          padding: '6px 10px',
+          fontSize: '0.8rem',
+          fontWeight: 500,
+          color: '#333',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+        }}
+      >
+        <Location24Regular style={{ fontSize: 16, color: '#0078d4', flexShrink: 0 }} />
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+          {address || 'Property location'}
+        </span>
+      </div>
+    </div>
+  );
 };
 
 // ─── EditableField ───
