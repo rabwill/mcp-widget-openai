@@ -1104,6 +1104,18 @@ const allowedOrigins = [
   'https://cdn.oaistatic.com',
   '.oaiusercontent.net',
   '.oaistatic.net',
+  // Microsoft 365 Copilot origins
+  'https://copilot.microsoft.com',
+  '.copilot.microsoft.com',
+  'https://m365.cloud.microsoft',
+  '.cloud.microsoft',
+  'https://copilot.cloud.microsoft',
+  'https://microsoft365.com',
+  '.microsoft365.com',
+  '.microsoft.com',
+  '.office.com',
+  '.office365.com',
+  '.sharepoint.com',
   // Common development URLs
   'https://login.microsoftonline.com',
   'https://login.live.com',
@@ -1164,6 +1176,27 @@ function isOriginAllowed(origin: string): boolean {
   });
 }
 
+// Resolve the public-facing URL for widget callbacks.
+// When the server runs behind a tunnel or on Azure Container Apps, the widget
+// iframe (hosted on widgetcopilot.net) must call back to the *public* URL,
+// not http://localhost which the browser blocks as private-network access.
+function getPublicServerUrl(req: express.Request): string {
+  // 1. Explicit env var (highest priority)
+  if (process.env.SERVER_BASE_URL) return process.env.SERVER_BASE_URL.replace(/\/$/, '');
+  // 2. Dev tunnel URL
+  if (process.env.DEVTUNNEL_URL) return process.env.DEVTUNNEL_URL.replace(/\/$/, '');
+  // 3. Azure Container Apps URL from env
+  if (process.env.CONTAINER_APP_HOSTNAME) return `https://${process.env.CONTAINER_APP_HOSTNAME}`;
+  // 4. X-Forwarded-Host / X-Original-Host (reverse proxies, Azure, etc.)
+  const fwdHost = req.get('X-Forwarded-Host') || req.get('X-Original-Host');
+  if (fwdHost) {
+    const proto = req.get('X-Forwarded-Proto') || 'https';
+    return `${proto}://${fwdHost}`;
+  }
+  // 5. Fall back to the request's own origin (works for direct public access)
+  return `${req.protocol}://${req.get('host')}`;
+}
+
 // Middleware
 app.use(validateOrigin);
 app.use(cors({
@@ -1180,8 +1213,19 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Mcp-Session-Id',
+    'Last-Event-ID',
+    'Cache-Control',
+    'X-Request-Id',
+  ],
+  exposedHeaders: ['Mcp-Session-Id'],
+  maxAge: 86400,
 }));
 app.use(express.json());
 
@@ -1213,7 +1257,7 @@ app.get('/mcp/resources/widget/claim-dashboard.html', (req, res) => {
   res.setHeader('Content-Type', 'text/html+skybridge');
   res.setHeader('X-Widget-Prefers-Border', 'true');
   // Inject the MCP server URL so the widget can call back for updates
-  const serverUrl = `${req.protocol}://${req.get('host')}`;
+  const serverUrl = getPublicServerUrl(req);
   const html = dashboardWidgetHtml.replace(
     '</head>',
     `<script>window.__MCP_SERVER_URL__="${serverUrl}";</script></head>`
@@ -1427,7 +1471,7 @@ app.post('/mcp/messages', async (req, res) => {
           };
         } else if (uri === 'ui://widget/claim-dashboard.html') {
           // Inject MCP server URL so the widget can call back for updates
-          const serverUrl = `${req.protocol}://${req.get('host')}`;
+          const serverUrl = getPublicServerUrl(req);
           const injectedHtml = dashboardWidgetHtml.replace(
             '</head>',
             `<script>window.__MCP_SERVER_URL__="${serverUrl}";</script></head>`
