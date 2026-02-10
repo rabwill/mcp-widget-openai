@@ -11,6 +11,7 @@ import {
   Input,
   Textarea,
   Select,
+  Checkbox,
   makeStyles,
   tokens,
   shorthands,
@@ -32,6 +33,11 @@ import {
   Location24Regular,
   Checkmark16Regular,
   DismissCircle16Regular,
+  Mail24Regular,
+  ClipboardPaste24Regular,
+  CheckboxChecked24Regular,
+  CheckboxUnchecked24Regular,
+  DismissSquare24Regular,
 } from '@fluentui/react-icons';
 
 // ─── Status Options ───
@@ -237,6 +243,38 @@ const useStyles = makeStyles({
     border: `1px solid ${tokens.colorNeutralStroke2}`,
     marginTop: tokens.spacingVerticalXS,
   },
+  // Bulk action styles
+  bulkBar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalS,
+    ...shorthands.padding(tokens.spacingVerticalXS, tokens.spacingHorizontalM),
+    marginBottom: tokens.spacingVerticalS,
+    backgroundColor: tokens.colorNeutralBackground3,
+    borderRadius: tokens.borderRadiusMedium,
+    flexWrap: 'wrap' as const,
+  },
+  bulkBarText: {
+    fontWeight: '600',
+    fontSize: '0.85rem',
+    marginRight: 'auto',
+  },
+  claimCardSelectable: {
+    ...shorthands.padding(tokens.spacingVerticalS, tokens.spacingHorizontalM),
+    cursor: 'pointer',
+    ':hover': { boxShadow: tokens.shadow8 },
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: tokens.spacingHorizontalS,
+  },
+  claimCardContent: {
+    flex: 1,
+    minWidth: 0,
+  },
+  cardSelected: {
+    outline: `2px solid ${tokens.colorBrandStroke1}`,
+    backgroundColor: tokens.colorNeutralBackground1Selected,
+  },
 });
 
 // ─── Helpers ───
@@ -273,6 +311,134 @@ const statusBadgeColor = (
   if (l.includes('closed')) return 'subtle';
   if (l.includes('denied') || l.includes('rejected')) return 'danger';
   return 'warning';
+};
+
+// ─── Clipboard email helpers (copies rich HTML for pasting into email / Copilot) ───
+const statusColor = (s: string): string => {
+  const l = (s || '').toLowerCase();
+  if (l.includes('pending')) return '#f0ad4e';
+  if (l.includes('investigation') || l.includes('review')) return '#5bc0de';
+  if (l.includes('approved')) return '#5cb85c';
+  if (l.includes('repair')) return '#5bc0de';
+  if (l.includes('closed')) return '#999';
+  if (l.includes('denied') || l.includes('rejected')) return '#d9534f';
+  return '#f0ad4e';
+};
+
+const claimToHtmlRow = (c: any): string => `
+  <tr>
+    <td style="padding:6px 10px;border-bottom:1px solid #eee;font-weight:600">${c.claimNumber || ''}</td>
+    <td style="padding:6px 10px;border-bottom:1px solid #eee">${c.policyHolderName || ''}</td>
+    <td style="padding:6px 10px;border-bottom:1px solid #eee">
+      <span style="background:${statusColor(c.status)};color:#fff;padding:2px 8px;border-radius:10px;font-size:12px">${getShortStatus(c.status)}</span>
+    </td>
+    <td style="padding:6px 10px;border-bottom:1px solid #eee">${c.property || ''}</td>
+    <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:600;color:#2e7d32">${formatCurrency(c.estimatedLoss || 0)}</td>
+    <td style="padding:6px 10px;border-bottom:1px solid #eee">${c.damageTypes || ''}</td>
+    <td style="padding:6px 10px;border-bottom:1px solid #eee">${formatDate(c.dateOfLoss)}</td>
+  </tr>`;
+
+const buildBulkHtml = (claims: any[]): string => {
+  const total = claims.reduce((s, c) => s + (c.estimatedLoss || 0), 0);
+  return `
+<div style="font-family:Segoe UI,system-ui,sans-serif;max-width:800px">
+  <h2 style="color:#0078d4;margin:0 0 4px">Zava Claims Summary</h2>
+  <p style="color:#666;margin:0 0 12px">${claims.length} claim${claims.length !== 1 ? 's' : ''} &bull; Total Est. Loss: <strong style="color:#2e7d32">${formatCurrency(total)}</strong></p>
+  <table style="border-collapse:collapse;width:100%;font-size:13px">
+    <thead>
+      <tr style="background:#f5f5f5">
+        <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #ddd">Claim #</th>
+        <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #ddd">Policy Holder</th>
+        <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #ddd">Status</th>
+        <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #ddd">Property</th>
+        <th style="padding:8px 10px;text-align:right;border-bottom:2px solid #ddd">Est. Loss</th>
+        <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #ddd">Damage</th>
+        <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #ddd">Loss Date</th>
+      </tr>
+    </thead>
+    <tbody>${claims.map(claimToHtmlRow).join('')}</tbody>
+  </table>
+  <p style="color:#999;font-size:11px;margin-top:12px">Generated from Zava Claims Dashboard</p>
+</div>`;
+};
+
+const buildSingleClaimHtml = (c: any): string => `
+<div style="font-family:Segoe UI,system-ui,sans-serif;max-width:600px">
+  <h2 style="color:#0078d4;margin:0 0 4px">Claim ${c.claimNumber || ''}</h2>
+  <p style="color:#666;margin:0 0 12px">${c.policyHolderName || ''} &bull; Policy ${c.policyNumber || ''}</p>
+  <table style="border-collapse:collapse;width:100%;font-size:13px">
+    <tr><td style="padding:5px 10px;color:#666;width:130px">Status</td><td style="padding:5px 10px"><span style="background:${statusColor(c.status)};color:#fff;padding:2px 8px;border-radius:10px;font-size:12px">${getShortStatus(c.status)}</span></td></tr>
+    <tr><td style="padding:5px 10px;color:#666">Property</td><td style="padding:5px 10px">${c.property || 'N/A'}</td></tr>
+    <tr><td style="padding:5px 10px;color:#666">Date of Loss</td><td style="padding:5px 10px">${formatDate(c.dateOfLoss)}</td></tr>
+    <tr><td style="padding:5px 10px;color:#666">Estimated Loss</td><td style="padding:5px 10px;font-weight:700;color:#2e7d32">${formatCurrency(c.estimatedLoss || 0)}</td></tr>
+    <tr><td style="padding:5px 10px;color:#666">Adjuster</td><td style="padding:5px 10px">${c.adjusterAssigned || 'Unassigned'}</td></tr>
+    <tr><td style="padding:5px 10px;color:#666">Damage Types</td><td style="padding:5px 10px">${c.damageTypes || 'None'}</td></tr>
+    <tr><td style="padding:5px 10px;color:#666;vertical-align:top">Description</td><td style="padding:5px 10px">${c.description || 'N/A'}</td></tr>
+    ${c.notes ? `<tr><td style="padding:5px 10px;color:#666;vertical-align:top">Notes</td><td style="padding:5px 10px">${c.notes}</td></tr>` : ''}
+  </table>
+  <p style="color:#999;font-size:11px;margin-top:12px">Generated from Zava Claims Dashboard</p>
+</div>`;
+
+const copyHtmlToClipboard = async (html: string, _plainText: string): Promise<boolean> => {
+  // Strategy 1: Clipboard API (works in non-sandboxed contexts)
+  try {
+    const blob = new Blob([html], { type: 'text/html' });
+    const textBlob = new Blob([_plainText], { type: 'text/plain' });
+    await navigator.clipboard.write([
+      new ClipboardItem({ 'text/html': blob, 'text/plain': textBlob }),
+    ]);
+    return true;
+  } catch { /* blocked in sandboxed iframe — fall through */ }
+
+  // Strategy 2: execCommand('copy') with a hidden rich-HTML selection
+  // This works inside ChatGPT / M365 Copilot sandboxed iframes
+  try {
+    const el = document.createElement('div');
+    el.innerHTML = html;
+    Object.assign(el.style, {
+      position: 'fixed', left: '-9999px', top: '-9999px',
+      opacity: '0', pointerEvents: 'none',
+    });
+    document.body.appendChild(el);
+
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+
+    const ok = document.execCommand('copy');
+    sel?.removeAllRanges();
+    document.body.removeChild(el);
+    if (ok) return true;
+  } catch { /* fall through */ }
+
+  // Strategy 3: plain-text clipboard fallback
+  try {
+    await navigator.clipboard.writeText(_plainText);
+    return true;
+  } catch { /* fall through */ }
+
+  // Strategy 4: execCommand with textarea (last resort, plain text only)
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = _plainText;
+    Object.assign(ta.style, { position: 'fixed', left: '-9999px', opacity: '0' });
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch { return false; }
+};
+
+const buildPlainTextSummary = (claims: any[]): string => {
+  const total = claims.reduce((s, c) => s + (c.estimatedLoss || 0), 0);
+  const header = `Claims Summary (${claims.length} claims, Total: ${formatCurrency(total)})`;
+  const rows = claims.map((c, i) =>
+    `${i + 1}. ${c.claimNumber} | ${getShortStatus(c.status)} | ${formatCurrency(c.estimatedLoss || 0)} | ${c.policyHolderName} | ${c.property}`
+  );
+  return [header, '', ...rows].join('\n');
 };
 
 const extractData = (raw: any): any[] | null => {
@@ -588,9 +754,69 @@ const StatsBar: React.FC<{ claims: any[] }> = ({ claims }) => {
   );
 };
 
-// ─── ClaimCard ───
-const ClaimCard: React.FC<{ claim: any; onClick: (c: any) => void }> = ({ claim, onClick }) => {
+// ─── ClaimCard (with optional checkbox for bulk selection) ───
+const ClaimCard: React.FC<{
+  claim: any;
+  onClick: (c: any) => void;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggle?: (id: string) => void;
+}> = ({ claim, onClick, selectable, selected, onToggle }) => {
   const styles = useStyles();
+  const key = claim.id || claim.claimNumber;
+
+  if (selectable) {
+    return (
+      <Card
+        className={`${styles.claimCardSelectable} ${selected ? styles.cardSelected : ''}`}
+        onClick={() => onClick(claim)}
+      >
+        <div
+          onClick={(e) => { e.stopPropagation(); onToggle?.(key); }}
+          style={{ paddingTop: '2px' }}
+        >
+          <Checkbox checked={!!selected} />
+        </div>
+        <div className={styles.claimCardContent}>
+          <div className={styles.claimCardHeader}>
+            <div>
+              <Subtitle1>{claim.claimNumber}</Subtitle1>
+              <Caption1 style={{ display: 'block', color: tokens.colorNeutralForeground3 }}>
+                {claim.policyHolderName}
+              </Caption1>
+            </div>
+            <Badge appearance="filled" color={statusBadgeColor(claim.status)} size="small">
+              {getShortStatus(claim.status)}
+            </Badge>
+          </div>
+          <div className={styles.detailGrid}>
+            <div>
+              <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>Property</Caption1>
+              <Body2 style={{ display: 'block' }}>{claim.property}</Body2>
+            </div>
+            <div>
+              <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>Loss Date</Caption1>
+              <Body2 style={{ display: 'block' }}>{formatDate(claim.dateOfLoss)}</Body2>
+            </div>
+            <div>
+              <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>Est. Loss</Caption1>
+              <Body2 style={{ display: 'block', color: tokens.colorPaletteGreenForeground1, fontWeight: '700' }}>
+                {formatCurrency(claim.estimatedLoss)}
+              </Body2>
+            </div>
+          </div>
+          {claim.damageTypes && (
+            <div className={styles.damageTags}>
+              {claim.damageTypes.split(',').map((d: string, i: number) => (
+                <Badge key={i} appearance="outline" size="small">{d.trim()}</Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className={styles.claimCard} onClick={() => onClick(claim)}>
       <div className={styles.claimCardHeader}>
@@ -615,13 +841,7 @@ const ClaimCard: React.FC<{ claim: any; onClick: (c: any) => void }> = ({ claim,
         </div>
         <div>
           <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>Est. Loss</Caption1>
-          <Body2
-            style={{
-              display: 'block',
-              color: tokens.colorPaletteGreenForeground1,
-              fontWeight: '700',
-            }}
-          >
+          <Body2 style={{ display: 'block', color: tokens.colorPaletteGreenForeground1, fontWeight: '700' }}>
             {formatCurrency(claim.estimatedLoss)}
           </Body2>
         </div>
@@ -629,13 +849,74 @@ const ClaimCard: React.FC<{ claim: any; onClick: (c: any) => void }> = ({ claim,
       {claim.damageTypes && (
         <div className={styles.damageTags}>
           {claim.damageTypes.split(',').map((d: string, i: number) => (
-            <Badge key={i} appearance="outline" size="small">
-              {d.trim()}
-            </Badge>
+            <Badge key={i} appearance="outline" size="small">{d.trim()}</Badge>
           ))}
         </div>
       )}
     </Card>
+  );
+};
+
+// ─── BulkActionBar ───
+const BulkActionBar: React.FC<{
+  items: any[];
+  selectedIds: Set<string>;
+  onToggleAll: () => void;
+  onClear: () => void;
+  onBulkStatus: (status: string) => void;
+  onCopyForEmail: () => void;
+  saving?: boolean;
+  copied?: boolean;
+}> = ({ items, selectedIds, onToggleAll, onClear, onBulkStatus, onCopyForEmail, saving, copied }) => {
+  const styles = useStyles();
+  const [statusDraft, setStatusDraft] = useState('');
+  const count = selectedIds.size;
+  const allSelected = count === items.length && items.length > 0;
+
+  return (
+    <div className={styles.bulkBar}>
+      <Checkbox
+        checked={allSelected ? true : count > 0 ? 'mixed' : false}
+        onChange={onToggleAll}
+        label={count > 0 ? `${count} selected` : 'Select all'}
+      />
+      {count > 0 && (
+        <>
+          <Button appearance="subtle" size="small" icon={<DismissSquare24Regular />} onClick={onClear}>
+            Clear
+          </Button>
+          <Select
+            size="small"
+            value={statusDraft}
+            onChange={(_e, d) => setStatusDraft(d.value)}
+            style={{ minWidth: '160px' }}
+          >
+            <option value="">Change status…</option>
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s} value={s}>{getShortStatus(s)}</option>
+            ))}
+          </Select>
+          {statusDraft && (
+            <Button
+              appearance="primary"
+              size="small"
+              disabled={saving}
+              onClick={() => { onBulkStatus(statusDraft); setStatusDraft(''); }}
+            >
+              {saving ? <Spinner size="tiny" /> : 'Apply'}
+            </Button>
+          )}
+          <Button
+            appearance={copied ? 'primary' : 'subtle'}
+            size="small"
+            icon={<ClipboardPaste24Regular />}
+            onClick={onCopyForEmail}
+          >
+            {copied ? 'Copied!' : 'Copy for Email'}
+          </Button>
+        </>
+      )}
+    </div>
   );
 };
 
@@ -695,15 +976,25 @@ const ClaimDetailView: React.FC<{ claim: any; onBack: () => void; onClaimUpdated
 
   return (
     <div>
-      <Button
-        appearance="subtle"
-        size="small"
-        icon={<ArrowLeft24Regular />}
-        onClick={onBack}
-        style={{ marginBottom: tokens.spacingVerticalXS }}
-      >
-        Back
-      </Button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacingVerticalXS }}>
+        <Button appearance="subtle" size="small" icon={<ArrowLeft24Regular />} onClick={onBack}>
+          Back
+        </Button>
+        <Button
+          appearance={saveMsg?.type === 'copied' ? 'primary' : 'subtle'}
+          size="small"
+          icon={<ClipboardPaste24Regular />}
+          onClick={async () => {
+            const html = buildSingleClaimHtml(claim);
+            const plain = `Claim ${claim.claimNumber} | ${getShortStatus(claim.status)} | ${formatCurrency(claim.estimatedLoss || 0)} | ${claim.policyHolderName}`;
+            const ok = await copyHtmlToClipboard(html, plain);
+            setSaveMsg(ok ? { type: 'copied', text: 'Copied! Paste into email or tell Copilot to embed it.' } : { type: 'warning', text: 'Copy failed — try again' });
+            setTimeout(() => setSaveMsg(null), 4000);
+          }}
+        >
+          {saveMsg?.type === 'copied' ? 'Copied!' : 'Copy for Email'}
+        </Button>
+      </div>
 
       {saveMsg && (
         <div style={{ marginBottom: tokens.spacingVerticalXS }}>
@@ -826,6 +1117,74 @@ const App = () => {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<any | null>(null);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const toggleBulkId = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleAll = () => {
+    if (selectedIds.size === items.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(items.map((c) => c.id || c.claimNumber)));
+    }
+  };
+  const clearSelection = () => { setSelectedIds(new Set()); setBulkMode(false); };
+
+  const handleBulkStatus = async (status: string) => {
+    setBulkSaving(true);
+    const baseUrl = (window as any).__MCP_SERVER_URL__ || window.location.origin;
+    const ids = Array.from(selectedIds);
+
+    // Fire all update_claim calls in parallel using Promise.allSettled
+    const promises = ids.map((id) =>
+      fetch(`${baseUrl}/mcp/tools/call`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'update_claim', arguments: { claimId: id, status } }),
+      })
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.success && json.data) return json.data;
+          console.error(`Update rejected for ${id}:`, json);
+          return null;
+        })
+        .catch((e) => { console.error(`Bulk update failed for ${id}:`, e); return null; })
+    );
+
+    const settled = await Promise.allSettled(promises);
+    const results = settled
+      .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled' && r.value !== null)
+      .map((r) => r.value);
+
+    if (results.length) {
+      setItems((prev) => prev.map((c) => {
+        const key = c.id || c.claimNumber;
+        const updated = results.find((r) => r.id === key || r.claimNumber === key);
+        return updated ? { ...c, ...updated } : c;
+      }));
+    }
+    setBulkSaving(false);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkEmail = async () => {
+    const sel = items.filter((c) => selectedIds.has(c.id || c.claimNumber));
+    const html = buildBulkHtml(sel);
+    const plain = buildPlainTextSummary(sel);
+    const ok = await copyHtmlToClipboard(html, plain);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    }
+  };
 
   const handleClaimUpdated = (updated: any) => {
     setSelected(updated);
@@ -929,9 +1288,38 @@ const App = () => {
               </div>
             </div>
             <StatsBar claims={items} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: tokens.spacingVerticalXS }}>
+              <Button
+                appearance={bulkMode ? 'primary' : 'subtle'}
+                size="small"
+                icon={bulkMode ? <CheckboxChecked24Regular /> : <CheckboxUnchecked24Regular />}
+                onClick={() => { setBulkMode(!bulkMode); if (bulkMode) clearSelection(); }}
+              >
+                {bulkMode ? 'Exit Bulk' : 'Bulk Edit'}
+              </Button>
+            </div>
+            {bulkMode && (
+              <BulkActionBar
+                items={items}
+                selectedIds={selectedIds}
+                onToggleAll={toggleAll}
+                onClear={clearSelection}
+                onBulkStatus={handleBulkStatus}
+                onCopyForEmail={handleBulkEmail}
+                saving={bulkSaving}
+                copied={copied}
+              />
+            )}
             <div className={styles.claimsList}>
               {items.map((c) => (
-                <ClaimCard key={c.id || c.claimNumber} claim={c} onClick={setSelected} />
+                <ClaimCard
+                  key={c.id || c.claimNumber}
+                  claim={c}
+                  onClick={setSelected}
+                  selectable={bulkMode}
+                  selected={selectedIds.has(c.id || c.claimNumber)}
+                  onToggle={toggleBulkId}
+                />
               ))}
             </div>
           </>
