@@ -1073,57 +1073,45 @@ const port = parseInt(process.env.PORT || '3001', 10);
 // Bind to 0.0.0.0 for production (Azure Container Apps) or localhost for local dev
 const host = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1');
 
-// Security: Allowlist of permitted origins to prevent DNS rebinding attacks
+// Security: Allowlist of permitted origins to prevent DNS rebinding attacks.
+// Prefix patterns ending with ':' or '://' match via startsWith().
+// Dot-prefixed entries (e.g. '.example.com') match any subdomain via hostname check.
+// All environment-driven entries are at the bottom — no hardcoded tunnel or deploy URLs.
 const allowedOrigins = [
-  'https://x8m4kwmz-3001.aue.devtunnels.ms',
-  'https://onlinemcpinspector.com',
-  'https://localhost:3001',
-  'http://127.0.0.1:3001',
-  // Production Azure Container Apps URL
-  'https://claims-mcp-app.yellowcliff-c66c6908.eastus.azurecontainerapps.io',
-  // Allow all localhost ports for development tools (MCP Inspector, etc.)
+  // ── Local development (any port) ──
   'http://localhost:',
   'http://127.0.0.1:',
   'https://localhost:',
   'https://127.0.0.1:',
-  // Add VS Code dev server origins
   'vscode-webview://',
-  // ChatGPT widget iframe origins
-  'https://widgetcopilot.net',
-  'https://www.widgetcopilot.net',
-  '.widgetcopilot.net',
-  'https://chatgpt.com',
-  'https://chat.openai.com',
-  '.chatgpt.com',
-  '.openai.com',
-  // Additional OpenAI platform domains used by widgets
-  '.oaiusercontent.com',
-  '.oaistatic.com',
+
+  // ── OpenAI / ChatGPT ──
+  '.chatgpt.com',            // chatgpt.com + subdomains
+  '.openai.com',             // chat.openai.com, platform.openai.com, etc.
   '.openai.co',
-  'https://oaiusercontent.com',
-  'https://cdn.oaistatic.com',
+  '.oaiusercontent.com',
   '.oaiusercontent.net',
+  '.oaistatic.com',
   '.oaistatic.net',
-  // Microsoft 365 Copilot origins
-  'https://copilot.microsoft.com',
-  '.copilot.microsoft.com',
-  'https://m365.cloud.microsoft',
-  '.cloud.microsoft',
-  'https://copilot.cloud.microsoft',
-  'https://microsoft365.com',
+  '.widgetcopilot.net',      // widget iframe host (e.g. <hash>.widgetcopilot.net)
+
+  // ── Microsoft 365 Copilot ──
+  '.microsoft.com',          // copilot.microsoft.com, *.microsoft.com
+  '.cloud.microsoft',        // m365.cloud.microsoft, copilot.cloud.microsoft
   '.microsoft365.com',
-  '.microsoft.com',
   '.office.com',
   '.office365.com',
   '.sharepoint.com',
-  // Common development URLs
-  'https://login.microsoftonline.com',
-  'https://login.live.com',
-  'https://account.live.com',
-  // Add devtunnel URL from environment (set by deploy script)
-  ...(process.env.DEVTUNNEL_URL ? [process.env.DEVTUNNEL_URL] : []),
-  // Add any additional trusted origins via environment variable (comma-separated)
-  ...(process.env.ADDITIONAL_ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(o => o) || [])
+  '.microsoftonline.com',    // login.microsoftonline.com
+  '.live.com',               // login.live.com, account.live.com
+
+  // ── Third-party tools ──
+  'https://onlinemcpinspector.com',
+
+  // ── Dynamic (environment-driven — no hardcoded URLs above this line) ──
+  ...(process.env.SERVER_BASE_URL         ? [process.env.SERVER_BASE_URL.replace(/\/$/, '')]     : []),
+  ...(process.env.CONTAINER_APP_HOSTNAME  ? [`https://${process.env.CONTAINER_APP_HOSTNAME}`]   : []),
+  ...(process.env.ADDITIONAL_ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || []),
 ];
 
 // Origin validation middleware to prevent DNS rebinding attacks
@@ -1181,11 +1169,9 @@ function isOriginAllowed(origin: string): boolean {
 // iframe (hosted on widgetcopilot.net) must call back to the *public* URL,
 // not http://localhost which the browser blocks as private-network access.
 function getPublicServerUrl(req: express.Request): string {
-  // 1. Explicit env var (highest priority)
+  // 1. Explicit env var (highest priority — covers dev tunnels, custom domains, etc.)
   if (process.env.SERVER_BASE_URL) return process.env.SERVER_BASE_URL.replace(/\/$/, '');
-  // 2. Dev tunnel URL
-  if (process.env.DEVTUNNEL_URL) return process.env.DEVTUNNEL_URL.replace(/\/$/, '');
-  // 3. Azure Container Apps URL from env
+  // 2. Azure Container Apps URL from env
   if (process.env.CONTAINER_APP_HOSTNAME) return `https://${process.env.CONTAINER_APP_HOSTNAME}`;
   // 4. X-Forwarded-Host / X-Original-Host (reverse proxies, Azure, etc.)
   const fwdHost = req.get('X-Forwarded-Host') || req.get('X-Original-Host');
