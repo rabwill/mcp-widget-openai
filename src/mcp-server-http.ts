@@ -80,7 +80,7 @@ const GetClaimsArgsSchema = z.object({
 });
 
 const GetClaimArgsSchema = z.object({
-  claimId: z.string(),
+  claimId: z.union([z.string(), z.array(z.string())]),
 });
 
 const CreateClaimArgsSchema = z.object({
@@ -251,13 +251,16 @@ const TOOLS = [
   },
   {
     name: 'get_claim',
-    description: 'Retrieve a specific insurance claim by ID or claim number',
+    description: 'Retrieve one or more insurance claims by ID or claim number. IMPORTANT: When the user asks about multiple claims, always pass ALL IDs/claim numbers together in a single call as an array — do NOT call this tool multiple times. Accepts a single string for one claim or an array of strings for multiple claims.',
     inputSchema: {
       type: 'object',
       properties: {
         claimId: {
-          type: 'string',
-          description: 'The claim ID (e.g., "1", "2") or claim number (e.g., "CN202504990")',
+          oneOf: [
+            { type: 'string', description: 'A single claim ID or claim number (e.g., "1" or "CN202504990")' },
+            { type: 'array', items: { type: 'string' }, description: 'An array of claim IDs or claim numbers (e.g., ["CN202504990", "CN202504991", "CN202504992"]). Always use this format when retrieving more than one claim.' }
+          ],
+          description: 'One or more claim IDs or claim numbers. Use an array to fetch multiple claims in one call.',
         },
       },
       required: ['claimId'],
@@ -557,15 +560,28 @@ async function executeTool(name: string, args: any, req?: express.Request) {
 
       case 'get_claim': {
         const parsed = GetClaimArgsSchema.parse(args);
-        const claim = await claimsImplementation.getClaimById(parsed.claimId);
+        const ids = Array.isArray(parsed.claimId) ? parsed.claimId : [parsed.claimId];
 
-        const response: ApiResponse<Claim> = {
+        if (ids.length === 1) {
+          const claim = await claimsImplementation.getClaimById(ids[0]);
+          const response: ApiResponse<Claim> = {
+            success: true,
+            data: claim,
+            message: 'Claim retrieved successfully',
+            timestamp: new Date().toISOString()
+          };
+          logger.mcpToolSuccess(metrics, response);
+          return response;
+        }
+
+        // Multiple IDs — fetch in parallel
+        const claims = await claimsImplementation.getClaimsByIds(ids);
+        const response: ApiResponse<Claim[]> = {
           success: true,
-          data: claim,
-          message: 'Claim retrieved successfully',
+          data: claims,
+          message: `${claims.length} claim(s) retrieved successfully`,
           timestamp: new Date().toISOString()
         };
-
         logger.mcpToolSuccess(metrics, response);
         return response;
       }

@@ -69,6 +69,35 @@ export class ClaimsImplementation {
     return claim;
   }
 
+  async getClaimsByIds(claimIds: string[]): Promise<Claim[]> {
+    logger.info(`Fetching ${claimIds.length} claims by IDs`, { claimIds });
+
+    const results = await Promise.allSettled(
+      claimIds.map((id) => tableStorageService.getClaim(id))
+    );
+
+    const claims: Claim[] = [];
+    const notFound: string[] = [];
+
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled' && result.value) {
+        claims.push(result.value);
+      } else {
+        notFound.push(claimIds[i]);
+      }
+    });
+
+    if (notFound.length) {
+      logger.warn(`Claims not found: ${notFound.join(', ')}`);
+    }
+
+    if (!claims.length) {
+      throw new ClaimNotFoundError(claimIds.join(', '));
+    }
+
+    return claims;
+  }
+
   async updateClaim(claimNumber: string, updateData: UpdateClaimRequest): Promise<Claim> {
     // Validate request body
     const { error } = updateClaimSchema.validate(updateData);
