@@ -99,7 +99,7 @@ const CreateClaimArgsSchema = z.object({
   notes: z.string().optional()
 });
 
-const UpdateClaimArgsSchema = z.object({
+const UpdateClaimItemSchema = z.object({
   claimId: z.string(),
   status: z.string().optional(),
   description: z.string().optional(),
@@ -108,6 +108,11 @@ const UpdateClaimArgsSchema = z.object({
   notes: z.string().optional(),
   damageTypes: z.string().optional()
 });
+
+const UpdateClaimArgsSchema = z.union([
+  UpdateClaimItemSchema,
+  z.object({ items: z.array(UpdateClaimItemSchema) }),
+]);
 
 const DeleteClaimArgsSchema = z.object({
   claimId: z.string(),
@@ -297,19 +302,35 @@ const TOOLS = [
   },
   {
     name: 'update_claim',
-    description: 'Update an existing insurance claim',
+    description: 'Update one or more insurance claims. IMPORTANT: When updating multiple claims, always pass ALL updates together in a single call using the "items" array — do NOT call this tool multiple times. For a single claim, pass claimId and fields at the top level. For multiple claims, pass an "items" array where each element has claimId and the fields to update.',
     inputSchema: {
       type: 'object',
       properties: {
-        claimId: { type: 'string', description: 'The claim ID or claim number' },
+        claimId: { type: 'string', description: 'The claim ID or claim number (for single update)' },
         status: { type: 'string', description: 'Updated claim status' },
         description: { type: 'string', description: 'Updated claim description' },
         estimatedLoss: { type: 'number', description: 'Updated estimated loss amount' },
         adjusterAssigned: { type: 'string', description: 'Updated assigned adjuster ID' },
         notes: { type: 'string', description: 'Updated notes' },
-        damageTypes: { type: 'string', description: 'Updated damage types (comma-separated)' }
-      },
-      required: ['claimId']
+        damageTypes: { type: 'string', description: 'Updated damage types (comma-separated)' },
+        items: {
+          type: 'array',
+          description: 'Array of claims to update in bulk. Each element must have claimId and any fields to update. Use this when updating more than one claim.',
+          items: {
+            type: 'object',
+            properties: {
+              claimId: { type: 'string', description: 'The claim ID or claim number' },
+              status: { type: 'string', description: 'Updated claim status' },
+              description: { type: 'string', description: 'Updated claim description' },
+              estimatedLoss: { type: 'number', description: 'Updated estimated loss amount' },
+              adjusterAssigned: { type: 'string', description: 'Updated assigned adjuster ID' },
+              notes: { type: 'string', description: 'Updated notes' },
+              damageTypes: { type: 'string', description: 'Updated damage types (comma-separated)' }
+            },
+            required: ['claimId']
+          }
+        }
+      }
     },
   },
   {
@@ -603,16 +624,55 @@ async function executeTool(name: string, args: any, req?: express.Request) {
 
       case 'update_claim': {
         const parsed = UpdateClaimArgsSchema.parse(args);
-        const { claimId, ...updateData } = parsed;
-        const updatedClaim = await claimsImplementation.updateClaim(claimId, updateData);
 
-        const response: ApiResponse<Claim> = {
-          success: true,
-          data: updatedClaim,
-          message: 'Claim updated successfully',
+        // Determine if this is a single update or bulk update
+        const updateItems = 'items' in parsed
+          ? parsed.items
+          : [parsed];
+
+        if (updateItems.length === 1) {
+          const { claimId, ...updateData } = updateItems[0];
+          const updatedClaim = await claimsImplementation.updateClaim(claimId, updateData);
+
+          const response: ApiResponse<Claim> = {
+            success: true,
+            data: updatedClaim,
+            message: 'Claim updated successfully',
+            timestamp: new Date().toISOString()
+          };
+          logger.mcpToolSuccess(metrics, response);
+          return response;
+        }
+
+        // Bulk update — run all in parallel
+        const results = await Promise.allSettled(
+          updateItems.map(({ claimId, ...updateData }) =>
+            claimsImplementation.updateClaim(claimId, updateData)
+          )
+        );
+
+        const succeeded: Claim[] = [];
+        const failed: { claimId: string; error: string }[] = [];
+
+        results.forEach((r, i) => {
+          if (r.status === 'fulfilled') {
+            succeeded.push(r.value);
+          } else {
+            failed.push({
+              claimId: updateItems[i].claimId,
+              error: r.reason instanceof Error ? r.reason.message : 'Unknown error'
+            });
+          }
+        });
+
+        const response: ApiResponse<Claim[]> = {
+          success: succeeded.length > 0,
+          data: succeeded,
+          message: failed.length
+            ? `${succeeded.length} claim(s) updated, ${failed.length} failed`
+            : `${succeeded.length} claim(s) updated successfully`,
           timestamp: new Date().toISOString()
         };
-
         logger.mcpToolSuccess(metrics, response);
         return response;
       }
