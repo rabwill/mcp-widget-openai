@@ -1578,8 +1578,8 @@ app.post('/mcp/messages', async (req, res) => {
         try {
           const toolResult = await executeTool(name, args || {}, req);
           
-          // Format response for OpenAI Apps SDK with structuredContent
-          // The structuredContent is available to the widget via window.openai.toolOutput
+          // Format response for MCP Apps bridge with structuredContent
+          // The structuredContent is delivered to the widget via ui/notifications/tool-result (postMessage JSON-RPC)
           result = {
             content: [
               {
@@ -1587,7 +1587,7 @@ app.post('/mcp/messages', async (req, res) => {
                 text: toolResult.message || 'Tool executed successfully'
               }
             ],
-            // structuredContent is surfaced to the widget via window.openai.toolOutput
+            // structuredContent is surfaced to the widget via the MCP Apps bridge
             structuredContent: toolResult
           };
         } catch (toolError) {

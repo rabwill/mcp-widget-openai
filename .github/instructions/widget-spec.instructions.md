@@ -9,7 +9,7 @@ applyTo: "public/**,widget/**,src/mcp-server-http.ts"
 Build widgets using **@fluentui/react-components v9** installed via npm.
 Reference: https://storybooks.fluentui.dev/react/
 
-This repo renders rich UI widgets inside ChatGPT via the **OpenAI Apps SDK** when MCP tools return data. Every widget **must** use Fluent UI React Components v9 for all UI elements, theming, and layout. **All dependencies must be npm packages** — no CDN script tags.
+This repo renders rich UI widgets inside ChatGPT via the **MCP Apps bridge** (JSON-RPC 2.0 over `postMessage`) when MCP tools return data. Every widget **must** use Fluent UI React Components v9 for all UI elements, theming, and layout. **All dependencies must be npm packages** — no CDN script tags.
 
 ---
 
@@ -18,17 +18,20 @@ This repo renders rich UI widgets inside ChatGPT via the **OpenAI Apps SDK** whe
 ```
 widget/                       ← Source TSX files (one per widget)
   ├── <name>.tsx              ← React + Fluent UI widget source
-  └── build-widgets.ts        ← esbuild script that produces self-contained HTML
+  ├── hooks/useMcpBridge.ts  ← Shared MCP Apps bridge hooks
+  └── build-widgets.ts      ← esbuild script that produces self-contained HTML
 public/                       ← Build output (self-contained HTML served by MCP server)
-  └── <name>-widget.html      ← Generated — DO NOT hand-edit
+  └── <name>-widget.html    ← Generated — DO NOT hand-edit
 src/mcp-server-http.ts        ← Loads public/*.html and serves via resources/read + REST
 ```
 
 - Widget **source** lives in `widget/<name>.tsx`.
+- Shared hooks live in `widget/hooks/useMcpBridge.ts` (MCP Apps bridge transport).
 - The build script `widget/build-widgets.ts` uses **esbuild** to bundle each TSX entry into a single self-contained HTML file in `public/`.
 - The MCP server (`src/mcp-server-http.ts`) loads the built HTML at startup and serves it via `resources/read` JSON-RPC and `GET /mcp/resources/widget/<name>.html`.
-- Tool output reaches the widget through `window.openai.toolOutput` (the `structuredContent` field in the MCP tool response).
-- Theme (light/dark) is provided by `window.openai.theme` and the `openai:set_globals` event.
+- Tool output reaches the widget via the **MCP Apps bridge**: `ui/notifications/tool-result` JSON-RPC notification over `postMessage`, with data in `params.structuredContent`.
+- For backward compatibility with older hosts, the hooks also fall back to `window.openai.toolOutput` and the `openai:set_globals` event.
+- Theme (light/dark) is detected from the bridge, `window.openai.theme`, or `prefers-color-scheme` as fallback.
 
 ---
 
@@ -185,6 +188,7 @@ import {
   ArrowLeft24Regular,
   // ... add only what you use
 } from '@fluentui/react-icons';
+import { useToolResult, useHostTheme } from './hooks/useMcpBridge';
 
 // ─── Styles ───
 const useStyles = makeStyles({
@@ -213,42 +217,23 @@ const extractData = (raw: any) => {
 // ─── App ───
 const App = () => {
   const styles = useStyles();
-  const [isDark, setIsDark] = useState(false);
+  const isDark = useHostTheme();
+  const toolResult = useToolResult();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // React to tool results from the MCP Apps bridge (or legacy fallback)
   useEffect(() => {
-    if ((window as any).openai?.theme === 'dark') setIsDark(true);
-
-    const handleSetGlobals = (e: any) => {
-      const t = e.detail?.globals?.theme;
-      if (t) setIsDark(t === 'dark');
-      const d = e.detail?.globals?.toolOutput;
-      if (d) {
-        const r = extractData(d);
-        if (r) { setItems(r); setLoading(false); }
-      }
-    };
-    window.addEventListener('openai:set_globals', handleSetGlobals);
-
-    if (!window.matchMedia) {/* noop */}
-    else if (!(window as any).openai?.theme && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setIsDark(true);
+    if (toolResult != null) {
+      const r = extractData(toolResult);
+      if (r) { setItems(r); setLoading(false); }
     }
+  }, [toolResult]);
 
-    const load = () => {
-      if ((window as any).openai?.toolOutput) {
-        const r = extractData((window as any).openai.toolOutput);
-        if (r) { setItems(r); setLoading(false); return true; }
-      }
-      return false;
-    };
-    if (!load()) {
-      const iv = setInterval(() => { if (load()) clearInterval(iv); }, 100);
-      setTimeout(() => { clearInterval(iv); setLoading(false); }, 5000);
-    }
-
-    return () => window.removeEventListener('openai:set_globals', handleSetGlobals);
+  // If no data arrives within 5s, stop the spinner
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 5000);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -292,25 +277,10 @@ createRoot(document.getElementById('root')!).render(<App />);
 ### Theme detection and switching:
 
 ```tsx
+import { useHostTheme } from './hooks/useMcpBridge';
+
 const App = () => {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    // Read initial theme from OpenAI Apps SDK
-    if ((window as any).openai?.theme === 'dark') setIsDark(true);
-
-    const handleSetGlobals = (event: any) => {
-      const theme = event.detail?.globals?.theme;
-      if (theme) setIsDark(theme === 'dark');
-    };
-    window.addEventListener('openai:set_globals', handleSetGlobals);
-
-    // Fallback: check system preference
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    if (!(window as any).openai?.theme && mq.matches) setIsDark(true);
-
-    return () => window.removeEventListener('openai:set_globals', handleSetGlobals);
-  }, []);
+  const isDark = useHostTheme();
 
   return (
     <FluentProvider theme={isDark ? webDarkTheme : webLightTheme}>
@@ -319,6 +289,11 @@ const App = () => {
   );
 };
 ```
+
+The `useHostTheme` hook handles all detection:
+1. MCP Apps bridge `ui/notifications/set-theme`
+2. Legacy `window.openai.theme` / `openai:set_globals` event
+3. `prefers-color-scheme` media query fallback
 
 ### Styling with `makeStyles` and `tokens`:
 
@@ -372,39 +347,41 @@ Use these Fluent UI components instead of hand-rolled HTML/CSS:
 
 ## 7. Receiving Data from MCP Tools
 
-The MCP server returns `structuredContent` in tool responses. The OpenAI Apps SDK injects it as `window.openai.toolOutput`.
+The MCP server returns `structuredContent` in tool responses. The MCP Apps bridge delivers it to the widget as a `ui/notifications/tool-result` JSON-RPC notification over `postMessage`. Legacy hosts still inject via `window.openai.toolOutput`.
+
+The shared hooks in `widget/hooks/useMcpBridge.ts` handle both transports.
 
 ### Data loading pattern (required):
 
 ```tsx
-const [data, setData] = useState<any[] | null>(null);
-const [loading, setLoading] = useState(true);
+import { useToolResult, useHostTheme } from './hooks/useMcpBridge';
 
-useEffect(() => {
-  const loadData = () => {
-    if ((window as any).openai?.toolOutput) {
-      const result = extractData((window as any).openai.toolOutput);
-      if (result) { setData(result); setLoading(false); return true; }
-    }
-    return false;
-  };
+const App = () => {
+  const isDark = useHostTheme();
+  const toolResult = useToolResult();
+  const [data, setData] = useState<any[] | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleSetGlobals = (event: any) => {
-    const toolOutput = event.detail?.globals?.toolOutput;
-    if (toolOutput) {
-      const result = extractData(toolOutput);
+  // React to tool results from the MCP Apps bridge (or legacy fallback)
+  useEffect(() => {
+    if (toolResult != null) {
+      const result = extractData(toolResult);
       if (result) { setData(result); setLoading(false); }
     }
-  };
-  window.addEventListener('openai:set_globals', handleSetGlobals);
+  }, [toolResult]);
 
-  if (!loadData()) {
-    const interval = setInterval(() => { if (loadData()) clearInterval(interval); }, 100);
-    setTimeout(() => { clearInterval(interval); setLoading(false); }, 5000);
-  }
+  // If no data arrives within 5s, stop the spinner
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
-  return () => window.removeEventListener('openai:set_globals', handleSetGlobals);
-}, []);
+  return (
+    <FluentProvider theme={isDark ? webDarkTheme : webLightTheme}>
+      {/* ... */}
+    </FluentProvider>
+  );
+};
 ```
 
 ### Standard server response shape:

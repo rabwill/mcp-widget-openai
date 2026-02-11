@@ -19,6 +19,7 @@ import {
   MessageBarBody,
 } from '@fluentui/react-components';
 import { ArrowLeft24Regular } from '@fluentui/react-icons';
+import { useToolResult, useHostTheme } from './hooks/useMcpBridge';
 
 // ─── Styles ───
 const useStyles = makeStyles({
@@ -453,59 +454,28 @@ const ClaimDetailView: React.FC<{ claim: any; onBack: () => void }> = ({ claim, 
 // ─── Main App ───
 const App = () => {
   const styles = useStyles();
-  const [isDark, setIsDark] = useState(false);
+  const isDark = useHostTheme();
+  const toolResult = useToolResult();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<any | null>(null);
 
+  // React to tool results from the MCP Apps bridge (or legacy fallback)
   useEffect(() => {
-    if ((window as any).openai?.theme === 'dark') setIsDark(true);
-
-    const handleSetGlobals = (e: any) => {
-      const t = e.detail?.globals?.theme;
-      if (t) setIsDark(t === 'dark');
-      const d = e.detail?.globals?.toolOutput;
-      if (d) {
-        const r = extractData(d);
-        if (r) {
-          setItems(r);
-          setLoading(false);
-          if (r.length === 1) setSelected(r[0]);
-        }
-      }
-    };
-    window.addEventListener('openai:set_globals', handleSetGlobals);
-
-    if (
-      !(window as any).openai?.theme &&
-      window.matchMedia?.('(prefers-color-scheme: dark)').matches
-    ) {
-      setIsDark(true);
-    }
-
-    const load = () => {
-      if ((window as any).openai?.toolOutput) {
-        const r = extractData((window as any).openai.toolOutput);
-        if (r) {
-          setItems(r);
-          setLoading(false);
-          if (r.length === 1) setSelected(r[0]);
-          return true;
-        }
-      }
-      return false;
-    };
-    if (!load()) {
-      const iv = setInterval(() => {
-        if (load()) clearInterval(iv);
-      }, 100);
-      setTimeout(() => {
-        clearInterval(iv);
+    if (toolResult != null) {
+      const r = extractData(toolResult);
+      if (r) {
+        setItems(r);
         setLoading(false);
-      }, 5000);
+        if (r.length === 1) setSelected(r[0]);
+      }
     }
+  }, [toolResult]);
 
-    return () => window.removeEventListener('openai:set_globals', handleSetGlobals);
+  // If no data arrives within 5s, stop the spinner
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 5000);
+    return () => clearTimeout(timer);
   }, []);
 
   return (

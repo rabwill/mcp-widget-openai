@@ -39,6 +39,7 @@ import {
   CheckboxUnchecked24Regular,
   DismissSquare24Regular,
 } from '@fluentui/react-icons';
+import { useToolResult, useHostTheme, useCallTool } from './hooks/useMcpBridge';
 
 // ─── Status Options ───
 const STATUS_OPTIONS = [
@@ -921,10 +922,16 @@ const BulkActionBar: React.FC<{
 };
 
 // ─── ClaimDetailView (compact, single-scroll, no tabs) ───
-const ClaimDetailView: React.FC<{ claim: any; onBack: () => void; onClaimUpdated?: (updated: any) => void }> = ({
+const ClaimDetailView: React.FC<{
+  claim: any;
+  onBack: () => void;
+  onClaimUpdated?: (updated: any) => void;
+  callTool: (toolName: string, args: Record<string, unknown>) => Promise<any>;
+}> = ({
   claim: initialClaim,
   onBack,
   onClaimUpdated,
+  callTool,
 }) => {
   const styles = useStyles();
   const [claim, setClaim] = useState(initialClaim);
@@ -938,24 +945,7 @@ const ClaimDetailView: React.FC<{ claim: any; onBack: () => void; onClaimUpdated
     setSaveMsg(null);
 
     try {
-      const baseUrl = (window as any).__MCP_SERVER_URL__ || window.location.origin;
-      const res = await fetch(`${baseUrl}/mcp/tools/call`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: 'update_claim',
-          arguments: { claimId: claim.id, [field]: value },
-        }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        let msg = `Server returned ${res.status}`;
-        try { msg = JSON.parse(text).error || msg; } catch {}
-        throw new Error(msg);
-      }
-
-      const json = await res.json();
+      const json = await callTool('update_claim', { claimId: claim.id, [field]: value });
 
       if (json.success && json.data) {
         setClaim(json.data);
@@ -1113,7 +1103,9 @@ const ClaimDetailView: React.FC<{ claim: any; onBack: () => void; onClaimUpdated
 // ─── Main App ───
 const App = () => {
   const styles = useStyles();
-  const [isDark, setIsDark] = useState(false);
+  const isDark = useHostTheme();
+  const toolResult = useToolResult();
+  const callTool = useCallTool();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<any | null>(null);
@@ -1140,23 +1132,17 @@ const App = () => {
 
   const handleBulkStatus = async (status: string) => {
     setBulkSaving(true);
-    const baseUrl = (window as any).__MCP_SERVER_URL__ || window.location.origin;
     const ids = Array.from(selectedIds);
 
-    // Fire all update_claim calls in parallel using Promise.allSettled
+    // Fire all update_claim calls in parallel via MCP Apps bridge
     const promises = ids.map((id) =>
-      fetch(`${baseUrl}/mcp/tools/call`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'update_claim', arguments: { claimId: id, status } }),
-      })
-        .then((res) => res.json())
-        .then((json) => {
+      callTool('update_claim', { claimId: id, status })
+        .then((json: any) => {
           if (json.success && json.data) return json.data;
           console.error(`Update rejected for ${id}:`, json);
           return null;
         })
-        .catch((e) => { console.error(`Bulk update failed for ${id}:`, e); return null; })
+        .catch((e: any) => { console.error(`Bulk update failed for ${id}:`, e); return null; })
     );
 
     const settled = await Promise.allSettled(promises);
@@ -1194,54 +1180,22 @@ const App = () => {
     ));
   };
 
+  // React to tool results from the MCP Apps bridge (or legacy fallback)
   useEffect(() => {
-    if ((window as any).openai?.theme === 'dark') setIsDark(true);
-
-    const handleSetGlobals = (e: any) => {
-      const t = e.detail?.globals?.theme;
-      if (t) setIsDark(t === 'dark');
-      const d = e.detail?.globals?.toolOutput;
-      if (d) {
-        const r = extractData(d);
-        if (r) {
-          setItems(r);
-          setLoading(false);
-          if (r.length === 1) setSelected(r[0]);
-        }
-      }
-    };
-    window.addEventListener('openai:set_globals', handleSetGlobals);
-
-    if (
-      !(window as any).openai?.theme &&
-      window.matchMedia?.('(prefers-color-scheme: dark)').matches
-    ) {
-      setIsDark(true);
-    }
-
-    const load = () => {
-      if ((window as any).openai?.toolOutput) {
-        const r = extractData((window as any).openai.toolOutput);
-        if (r) {
-          setItems(r);
-          setLoading(false);
-          if (r.length === 1) setSelected(r[0]);
-          return true;
-        }
-      }
-      return false;
-    };
-    if (!load()) {
-      const iv = setInterval(() => {
-        if (load()) clearInterval(iv);
-      }, 100);
-      setTimeout(() => {
-        clearInterval(iv);
+    if (toolResult != null) {
+      const r = extractData(toolResult);
+      if (r) {
+        setItems(r);
         setLoading(false);
-      }, 5000);
+        if (r.length === 1) setSelected(r[0]);
+      }
     }
+  }, [toolResult]);
 
-    return () => window.removeEventListener('openai:set_globals', handleSetGlobals);
+  // If no data arrives within 5s, stop the spinner
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 5000);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -1270,7 +1224,7 @@ const App = () => {
                 </div>
               </div>
             </div>
-            <ClaimDetailView claim={selected} onBack={() => setSelected(null)} onClaimUpdated={handleClaimUpdated} />
+            <ClaimDetailView claim={selected} onBack={() => setSelected(null)} onClaimUpdated={handleClaimUpdated} callTool={callTool} />
           </>
         ) : (
           <>
