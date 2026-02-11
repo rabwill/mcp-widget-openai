@@ -15,11 +15,11 @@ export interface ClaimEntity extends TableEntity {
   dateOfLoss: string;
   dateReported: string;
   status: string; // Simple string
-  damageTypesData: string; // JSON string array
+  damageTypesData: string; // Plain string
   description: string;
   estimatedLoss: number;
   adjusterAssigned?: string;
-  notesData: string; // JSON string array
+  notesData: string; // Plain string
   createdAt: string;
   updatedAt: string;
 }
@@ -152,14 +152,7 @@ export class TableStorageService {
         
         if (filters?.damageType && include) {
           const damageTypeLower = filters.damageType.toLowerCase();
-          try {
-            const damageTypes: string[] = JSON.parse(entity.damageTypesData || '[]');
-            include = damageTypes.some((type: string) => 
-              type.toLowerCase().includes(damageTypeLower)
-            );
-          } catch {
-            include = false;
-          }
+          include = (entity.damageTypesData || '').toLowerCase().includes(damageTypeLower);
         }
         
         if (include) {
@@ -547,11 +540,11 @@ export class TableStorageService {
       dateOfLoss: entity.dateOfLoss,
       dateReported: entity.dateReported,
       status: entity.status,
-      damageTypes: JSON.parse(entity.damageTypesData || '[]'),
+      damageTypes: entity.damageTypesData || '',
       description: entity.description,
       estimatedLoss: entity.estimatedLoss,
       adjusterAssigned: entity.adjusterAssigned,
-      notes: JSON.parse(entity.notesData || '[]'),
+      notes: entity.notesData || '',
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt
     };
@@ -570,11 +563,11 @@ export class TableStorageService {
       dateOfLoss: claim.dateOfLoss,
       dateReported: claim.dateReported,
       status: claim.status,
-      damageTypesData: JSON.stringify(claim.damageTypes || []),
+      damageTypesData: claim.damageTypes || '',
       description: claim.description,
       estimatedLoss: claim.estimatedLoss,
       adjusterAssigned: claim.adjusterAssigned,
-      notesData: JSON.stringify(claim.notes || []),
+      notesData: claim.notes || '',
       createdAt: claim.createdAt,
       updatedAt: claim.updatedAt
     };

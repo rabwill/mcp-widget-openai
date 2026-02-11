@@ -37,6 +37,17 @@ try {
   widgetHtml = `<!DOCTYPE html><html><body><p>Widget failed to load</p></body></html>`;
 }
 
+// Load the Claim Dashboard widget HTML
+const dashboardHtmlPath = resolve(process.cwd(), "public/claim-dashboard-widget.html");
+let dashboardWidgetHtml: string;
+try {
+  dashboardWidgetHtml = readFileSync(dashboardHtmlPath, "utf8");
+  console.log(`Loaded Claim Dashboard widget from ${dashboardHtmlPath}`);
+} catch (e) {
+  console.error(`Failed to load dashboard widget HTML from ${dashboardHtmlPath}:`, e);
+  dashboardWidgetHtml = `<!DOCTYPE html><html><body><p>Dashboard widget failed to load</p></body></html>`;
+}
+
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { z } from 'zod';
@@ -69,7 +80,7 @@ const GetClaimsArgsSchema = z.object({
 });
 
 const GetClaimArgsSchema = z.object({
-  claimId: z.string(),
+  claimId: z.union([z.string(), z.array(z.string())]),
 });
 
 const CreateClaimArgsSchema = z.object({
@@ -81,22 +92,27 @@ const CreateClaimArgsSchema = z.object({
   dateOfLoss: z.string(),
   dateReported: z.string(),
   status: z.string(),
-  damageTypes: z.array(z.string()),
+  damageTypes: z.string(),
   description: z.string(),
   estimatedLoss: z.number(),
   adjusterAssigned: z.string().optional(),
-  notes: z.array(z.string()).optional()
+  notes: z.string().optional()
 });
 
-const UpdateClaimArgsSchema = z.object({
+const UpdateClaimItemSchema = z.object({
   claimId: z.string(),
   status: z.string().optional(),
   description: z.string().optional(),
   estimatedLoss: z.number().optional(),
   adjusterAssigned: z.string().optional(),
-  notes: z.array(z.string()).optional(),
-  damageTypes: z.array(z.string()).optional()
+  notes: z.string().optional(),
+  damageTypes: z.string().optional()
 });
+
+const UpdateClaimArgsSchema = z.union([
+  UpdateClaimItemSchema,
+  z.object({ items: z.array(UpdateClaimItemSchema) }),
+]);
 
 const DeleteClaimArgsSchema = z.object({
   claimId: z.string(),
@@ -233,27 +249,30 @@ const TOOLS = [
     },
     // OpenAI Apps SDK widget metadata
     _meta: {
-      "openai/outputTemplate": "ui://widget/claims.html",
+      "openai/outputTemplate": "ui://widget/claim-dashboard.html",
       "openai/toolInvocation/invoking": "Fetching claims...",
       "openai/toolInvocation/invoked": "Claims loaded",
     },
   },
   {
     name: 'get_claim',
-    description: 'Retrieve a specific insurance claim by ID or claim number',
+    description: 'Retrieve one or more insurance claims by ID or claim number. IMPORTANT: When the user asks about multiple claims, always pass ALL IDs/claim numbers together in a single call as an array — do NOT call this tool multiple times. Accepts a single string for one claim or an array of strings for multiple claims.',
     inputSchema: {
       type: 'object',
       properties: {
         claimId: {
-          type: 'string',
-          description: 'The claim ID (e.g., "1", "2") or claim number (e.g., "CN202504990")',
+          oneOf: [
+            { type: 'string', description: 'A single claim ID or claim number (e.g., "1" or "CN202504990")' },
+            { type: 'array', items: { type: 'string' }, description: 'An array of claim IDs or claim numbers (e.g., ["CN202504990", "CN202504991", "CN202504992"]). Always use this format when retrieving more than one claim.' }
+          ],
+          description: 'One or more claim IDs or claim numbers. Use an array to fetch multiple claims in one call.',
         },
       },
       required: ['claimId'],
     },
     // OpenAI Apps SDK widget metadata
     _meta: {
-      "openai/outputTemplate": "ui://widget/claims.html",
+      "openai/outputTemplate": "ui://widget/claim-dashboard.html",
       "openai/toolInvocation/invoking": "Loading claim details...",
       "openai/toolInvocation/invoked": "Claim details loaded",
     },
@@ -272,30 +291,46 @@ const TOOLS = [
         dateOfLoss: { type: 'string', description: 'ISO date string' },
         dateReported: { type: 'string', description: 'ISO date string' },
         status: { type: 'string', description: 'Current claim status' },
-        damageTypes: { type: 'array', items: { type: 'string' }, description: 'Array of damage types' },
+        damageTypes: { type: 'string', description: 'Damage types (comma-separated)' },
         description: { type: 'string', description: 'Claim description' },
         estimatedLoss: { type: 'number', description: 'Estimated loss amount' },
         adjusterAssigned: { type: 'string', description: 'Assigned adjuster ID' },
-        notes: { type: 'array', items: { type: 'string' }, description: 'Additional notes' }
+        notes: { type: 'string', description: 'Additional notes' }
       },
       required: ['claimNumber', 'policyNumber', 'policyHolderName', 'policyHolderEmail', 'property', 'dateOfLoss', 'dateReported', 'status', 'damageTypes', 'description', 'estimatedLoss']
     },
   },
   {
     name: 'update_claim',
-    description: 'Update an existing insurance claim',
+    description: 'Update one or more insurance claims. IMPORTANT: When updating multiple claims, always pass ALL updates together in a single call using the "items" array — do NOT call this tool multiple times. For a single claim, pass claimId and fields at the top level. For multiple claims, pass an "items" array where each element has claimId and the fields to update.',
     inputSchema: {
       type: 'object',
       properties: {
-        claimId: { type: 'string', description: 'The claim ID or claim number' },
+        claimId: { type: 'string', description: 'The claim ID or claim number (for single update)' },
         status: { type: 'string', description: 'Updated claim status' },
         description: { type: 'string', description: 'Updated claim description' },
         estimatedLoss: { type: 'number', description: 'Updated estimated loss amount' },
         adjusterAssigned: { type: 'string', description: 'Updated assigned adjuster ID' },
-        notes: { type: 'array', items: { type: 'string' }, description: 'Updated notes' },
-        damageTypes: { type: 'array', items: { type: 'string' }, description: 'Updated damage types' }
-      },
-      required: ['claimId']
+        notes: { type: 'string', description: 'Updated notes' },
+        damageTypes: { type: 'string', description: 'Updated damage types (comma-separated)' },
+        items: {
+          type: 'array',
+          description: 'Array of claims to update in bulk. Each element must have claimId and any fields to update. Use this when updating more than one claim.',
+          items: {
+            type: 'object',
+            properties: {
+              claimId: { type: 'string', description: 'The claim ID or claim number' },
+              status: { type: 'string', description: 'Updated claim status' },
+              description: { type: 'string', description: 'Updated claim description' },
+              estimatedLoss: { type: 'number', description: 'Updated estimated loss amount' },
+              adjusterAssigned: { type: 'string', description: 'Updated assigned adjuster ID' },
+              notes: { type: 'string', description: 'Updated notes' },
+              damageTypes: { type: 'string', description: 'Updated damage types (comma-separated)' }
+            },
+            required: ['claimId']
+          }
+        }
+      }
     },
   },
   {
@@ -546,15 +581,28 @@ async function executeTool(name: string, args: any, req?: express.Request) {
 
       case 'get_claim': {
         const parsed = GetClaimArgsSchema.parse(args);
-        const claim = await claimsImplementation.getClaimById(parsed.claimId);
+        const ids = Array.isArray(parsed.claimId) ? parsed.claimId : [parsed.claimId];
 
-        const response: ApiResponse<Claim> = {
+        if (ids.length === 1) {
+          const claim = await claimsImplementation.getClaimById(ids[0]);
+          const response: ApiResponse<Claim> = {
+            success: true,
+            data: claim,
+            message: 'Claim retrieved successfully',
+            timestamp: new Date().toISOString()
+          };
+          logger.mcpToolSuccess(metrics, response);
+          return response;
+        }
+
+        // Multiple IDs — fetch in parallel
+        const claims = await claimsImplementation.getClaimsByIds(ids);
+        const response: ApiResponse<Claim[]> = {
           success: true,
-          data: claim,
-          message: 'Claim retrieved successfully',
+          data: claims,
+          message: `${claims.length} claim(s) retrieved successfully`,
           timestamp: new Date().toISOString()
         };
-
         logger.mcpToolSuccess(metrics, response);
         return response;
       }
@@ -576,16 +624,55 @@ async function executeTool(name: string, args: any, req?: express.Request) {
 
       case 'update_claim': {
         const parsed = UpdateClaimArgsSchema.parse(args);
-        const { claimId, ...updateData } = parsed;
-        const updatedClaim = await claimsImplementation.updateClaim(claimId, updateData);
 
-        const response: ApiResponse<Claim> = {
-          success: true,
-          data: updatedClaim,
-          message: 'Claim updated successfully',
+        // Determine if this is a single update or bulk update
+        const updateItems = 'items' in parsed
+          ? parsed.items
+          : [parsed];
+
+        if (updateItems.length === 1) {
+          const { claimId, ...updateData } = updateItems[0];
+          const updatedClaim = await claimsImplementation.updateClaim(claimId, updateData);
+
+          const response: ApiResponse<Claim> = {
+            success: true,
+            data: updatedClaim,
+            message: 'Claim updated successfully',
+            timestamp: new Date().toISOString()
+          };
+          logger.mcpToolSuccess(metrics, response);
+          return response;
+        }
+
+        // Bulk update — run all in parallel
+        const results = await Promise.allSettled(
+          updateItems.map(({ claimId, ...updateData }) =>
+            claimsImplementation.updateClaim(claimId, updateData)
+          )
+        );
+
+        const succeeded: Claim[] = [];
+        const failed: { claimId: string; error: string }[] = [];
+
+        results.forEach((r, i) => {
+          if (r.status === 'fulfilled') {
+            succeeded.push(r.value);
+          } else {
+            failed.push({
+              claimId: updateItems[i].claimId,
+              error: r.reason instanceof Error ? r.reason.message : 'Unknown error'
+            });
+          }
+        });
+
+        const response: ApiResponse<Claim[]> = {
+          success: succeeded.length > 0,
+          data: succeeded,
+          message: failed.length
+            ? `${succeeded.length} claim(s) updated, ${failed.length} failed`
+            : `${succeeded.length} claim(s) updated successfully`,
           timestamp: new Date().toISOString()
         };
-
         logger.mcpToolSuccess(metrics, response);
         return response;
       }
@@ -806,7 +893,7 @@ async function generatePrompt(name: string, args: any): Promise<string> {
 - **Property Address**: ${claim.property}
 
 ## Damage Information
-${claim.damageTypes?.map((damage: string) => `- ${damage}`).join('\\n') || '- No damage details recorded'}
+${claim.damageTypes || 'No damage details recorded'}
 
 ## Assessment Instructions
 Please provide a comprehensive damage assessment including:
@@ -819,7 +906,7 @@ Please provide a comprehensive damage assessment including:
 ## Current Description
 ${claim.description}
 
-${claim.notes?.length ? `## Additional Notes\n${claim.notes.map((note: string, i: number) => `${i + 1}. ${note}`).join('\\n')}` : ''}`;
+${claim.notes ? `## Additional Notes\n${claim.notes}` : ''}`;
             break;
 
           case 'cost_estimation':
@@ -841,7 +928,7 @@ Based on the claim information provided, please:
 6. Flag any estimates that require additional verification
 
 ## Damage Summary
-${claim.damageTypes?.map((damage: string) => `- ${damage}`).join('\\n') || 'No damage details available'}
+${claim.damageTypes || 'No damage details available'}
 
 ## Current Claim Description
 ${claim.description}`;
@@ -869,13 +956,12 @@ Please analyze this claim for potential fraud indicators including:
 ## Claim Details
 **Description**: ${claim.description}
 
-**Damage Types**: 
-${claim.damageTypes?.map((damage: string) => `- ${damage}`).join('\\n') || 'No damage types recorded'}
+**Damage Types**: ${claim.damageTypes || 'No damage types recorded'}
 
 **Property Address**: ${claim.property}
 
 ## Additional Context
-${claim.notes?.length ? claim.notes.map((note: string, i: number) => `${i + 1}. ${note}`).join('\\n') : 'No additional notes provided'}`;
+${claim.notes || 'No additional notes provided'}`;
             break;
         }
 
@@ -934,8 +1020,7 @@ Please provide a detailed assessment covering:
 **Date of Loss**: ${claim.dateOfLoss}
 **Description**: ${claim.description}
 
-${claim.damageTypes?.length ? `## Recorded Damage Types
-${claim.damageTypes.map((damage: string) => `- ${damage}`).join('\\n')}` : ''}`;
+${claim.damageTypes ? `## Recorded Damage Types\n${claim.damageTypes}` : ''}`;
 
         return promptContent;
       }
@@ -1064,51 +1149,64 @@ const port = parseInt(process.env.PORT || '3001', 10);
 // Bind to 0.0.0.0 for production (Azure Container Apps) or localhost for local dev
 const host = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1');
 
-// Security: Allowlist of permitted origins to prevent DNS rebinding attacks
+// Security: Allowlist of permitted origins to prevent DNS rebinding attacks.
+// Prefix patterns ending with ':' or '://' match via startsWith().
+// Dot-prefixed entries (e.g. '.example.com') match any subdomain via hostname check.
+// All environment-driven entries are at the bottom — no hardcoded tunnel or deploy URLs.
 const allowedOrigins = [
-  'https://x8m4kwmz-3001.aue.devtunnels.ms',
-  'https://onlinemcpinspector.com',
-  'https://localhost:3001',
-  'http://127.0.0.1:3001',
-  // Production Azure Container Apps URL
-  'https://claims-mcp-app.yellowcliff-c66c6908.eastus.azurecontainerapps.io',
-  // Allow all localhost ports for development tools (MCP Inspector, etc.)
+  // ── Local development (any port) ──
   'http://localhost:',
   'http://127.0.0.1:',
   'https://localhost:',
   'https://127.0.0.1:',
-  // Add VS Code dev server origins
   'vscode-webview://',
-  // Common development URLs
-  'https://login.microsoftonline.com',
-  'https://login.live.com',
-  'https://account.live.com',
-  // Add devtunnel URL from environment (set by deploy script)
-  ...(process.env.DEVTUNNEL_URL ? [process.env.DEVTUNNEL_URL] : []),
-  // Add any additional trusted origins via environment variable (comma-separated)
-  ...(process.env.ADDITIONAL_ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(o => o) || [])
+
+  // ── OpenAI / ChatGPT ──
+  '.chatgpt.com',            // chatgpt.com + subdomains
+  '.openai.com',             // chat.openai.com, platform.openai.com, etc.
+  '.openai.co',
+  '.oaiusercontent.com',
+  '.oaiusercontent.net',
+  '.oaistatic.com',
+  '.oaistatic.net',
+  '.widgetcopilot.net',      // widget iframe host (e.g. <hash>.widgetcopilot.net)
+
+  // ── Microsoft 365 Copilot ──
+  '.microsoft.com',          // copilot.microsoft.com, *.microsoft.com
+  '.cloud.microsoft',        // m365.cloud.microsoft, copilot.cloud.microsoft
+  '.microsoft365.com',
+  '.office.com',
+  '.office365.com',
+  '.sharepoint.com',
+  '.microsoftonline.com',    // login.microsoftonline.com
+  '.live.com',               // login.live.com, account.live.com
+
+  // ── Third-party tools ──
+  'https://onlinemcpinspector.com',
+
+  // ── Dynamic (environment-driven — no hardcoded URLs above this line) ──
+  ...(process.env.SERVER_BASE_URL         ? [process.env.SERVER_BASE_URL.replace(/\/$/, '')]     : []),
+  ...(process.env.CONTAINER_APP_HOSTNAME  ? [`https://${process.env.CONTAINER_APP_HOSTNAME}`]   : []),
+  ...(process.env.ADDITIONAL_ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || []),
 ];
 
 // Origin validation middleware to prevent DNS rebinding attacks
 const validateOrigin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  // Always allow CORS preflight requests through — the cors() middleware handles them
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+
   const origin = req.get('Origin') || req.get('Referer');
   
   // Allow requests without origin (direct API calls, curl, etc.)
-  if (!origin) {
+  // Also allow "null" origin from sandboxed iframes (e.g. ChatGPT widget)
+  if (!origin || origin === 'null') {
     return next();
   }
 
   // Check if origin is in allowlist or matches VS Code webview pattern
-  const isAllowed = allowedOrigins.some(allowed => {
-    if (allowed.endsWith('://')) {
-      return origin.startsWith(allowed);
-    }
-    // Handle localhost/127.0.0.1 with any port (e.g., "http://localhost:")
-    if (allowed.endsWith(':')) {
-      return origin.startsWith(allowed);
-    }
-    return origin === allowed || origin.startsWith(allowed + '/');
-  });
+  const isAllowed = isOriginAllowed(origin);
 
   if (!isAllowed) {
     logger.warn(`Rejected request from unauthorized origin: ${origin}`);
@@ -1121,31 +1219,75 @@ const validateOrigin = (req: express.Request, res: express.Response, next: expre
   next();
 };
 
+// Shared origin check used by both validateOrigin and cors()
+function isOriginAllowed(origin: string): boolean {
+  return allowedOrigins.some(allowed => {
+    if (allowed.endsWith('://')) {
+      return origin.startsWith(allowed);
+    }
+    // Handle localhost/127.0.0.1 with any port (e.g., "http://localhost:")
+    if (allowed.endsWith(':')) {
+      return origin.startsWith(allowed);
+    }
+    // Wildcard subdomain match (e.g., ".widgetcopilot.net" matches "https://abc.widgetcopilot.net")
+    if (allowed.startsWith('.')) {
+      try {
+        const hostname = new URL(origin).hostname;
+        return hostname.endsWith(allowed) || hostname === allowed.slice(1);
+      } catch { return false; }
+    }
+    return origin === allowed || origin.startsWith(allowed + '/');
+  });
+}
+
+// Resolve the public-facing URL for widget callbacks.
+// When the server runs behind a tunnel or on Azure Container Apps, the widget
+// iframe (hosted on widgetcopilot.net) must call back to the *public* URL,
+// not http://localhost which the browser blocks as private-network access.
+function getPublicServerUrl(req: express.Request): string {
+  // 1. Explicit env var (highest priority — covers dev tunnels, custom domains, etc.)
+  if (process.env.SERVER_BASE_URL) return process.env.SERVER_BASE_URL.replace(/\/$/, '');
+  // 2. Azure Container Apps URL from env
+  if (process.env.CONTAINER_APP_HOSTNAME) return `https://${process.env.CONTAINER_APP_HOSTNAME}`;
+  // 4. X-Forwarded-Host / X-Original-Host (reverse proxies, Azure, etc.)
+  const fwdHost = req.get('X-Forwarded-Host') || req.get('X-Original-Host');
+  if (fwdHost) {
+    const proto = req.get('X-Forwarded-Proto') || 'https';
+    return `${proto}://${fwdHost}`;
+  }
+  // 5. Fall back to the request's own origin (works for direct public access)
+  return `${req.protocol}://${req.get('host')}`;
+}
+
 // Middleware
 app.use(validateOrigin);
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, curl, Postman, etc.)
-    if (!origin) return callback(null, true);
+    // Also allow "null" origin from sandboxed iframes (e.g. ChatGPT widget)
+    if (!origin || origin === 'null') return callback(null, true);
     
-    const isAllowed = allowedOrigins.some(allowed => {
-      if (allowed.endsWith('://')) {
-        return origin.startsWith(allowed);
-      }
-      // Handle localhost/127.0.0.1 with any port (e.g., "http://localhost:")
-      if (allowed.endsWith(':')) {
-        return origin.startsWith(allowed);
-      }
-      return origin === allowed || origin.startsWith(allowed + '/');
-    });
-    
-    if (isAllowed) {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
+      logger.warn(`CORS rejected origin: ${origin}`);
       callback(new Error('Not allowed by CORS policy'));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Mcp-Session-Id',
+    'Last-Event-ID',
+    'Cache-Control',
+    'X-Request-Id',
+  ],
+  exposedHeaders: ['Mcp-Session-Id'],
+  maxAge: 86400,
 }));
 app.use(express.json());
 
@@ -1165,11 +1307,24 @@ app.get('/health', (req, res) => {
 
 // No OAuth discovery endpoints - authentication is disabled
 
-// OpenAI Apps SDK Widget Resource Endpoint
+// OpenAI Apps SDK Widget Resource Endpoint (original claims widget)
 app.get('/mcp/resources/widget/claims.html', (req, res) => {
   res.setHeader('Content-Type', 'text/html+skybridge');
   res.setHeader('X-Widget-Prefers-Border', 'true');
   res.send(widgetHtml);
+});
+
+// Claim Dashboard Widget Resource Endpoint (new dashboard with map + inline editing)
+app.get('/mcp/resources/widget/claim-dashboard.html', (req, res) => {
+  res.setHeader('Content-Type', 'text/html+skybridge');
+  res.setHeader('X-Widget-Prefers-Border', 'true');
+  // Inject the MCP server URL so the widget can call back for updates
+  const serverUrl = getPublicServerUrl(req);
+  const html = dashboardWidgetHtml.replace(
+    '</head>',
+    `<script>window.__MCP_SERVER_URL__="${serverUrl}";</script></head>`
+  );
+  res.send(html);
 });
 
 // MCP Resources endpoint for OpenAI Apps SDK
@@ -1186,6 +1341,18 @@ app.get('/mcp/resources', (req, res) => {
           'openai/widgetDescription': 
             'Interactive dashboard for viewing and managing Zava Insurance claims, inspections, contractors, and inspectors. ' +
             'Displays data in cards with statistics, status badges, and action buttons.',
+        },
+      },
+      {
+        uri: 'ui://widget/claim-dashboard.html',
+        name: 'claim-dashboard-widget',
+        mimeType: 'text/html+skybridge',
+        description: 'Claim dashboard with property map, inline editing, and tabbed detail view for Zava Insurance claims.',
+        _meta: {
+          'openai/widgetPrefersBorder': true,
+          'openai/widgetDescription':
+            'Rich claim dashboard with interactive map for property locations, inline editing for updatable fields, ' +
+            'and tabbed navigation for overview, property, and detail sections.',
         },
       }
     ]
@@ -1332,6 +1499,18 @@ app.post('/mcp/messages', async (req, res) => {
                   'Interactive dashboard for viewing and managing Zava Insurance claims, inspections, contractors, and inspectors. ' +
                   'Displays data in cards with statistics, status badges, and action buttons.',
               },
+            },
+            {
+              uri: 'ui://widget/claim-dashboard.html',
+              name: 'claim-dashboard-widget',
+              mimeType: 'text/html+skybridge',
+              description: 'Claim dashboard with property map, inline editing, and tabbed detail view.',
+              _meta: {
+                'openai/widgetPrefersBorder': true,
+                'openai/widgetDescription':
+                  'Rich claim dashboard with interactive map for property locations, inline editing for updatable fields, ' +
+                  'and tabbed navigation for overview, property, and detail sections.',
+              },
             }
           ]
         };
@@ -1346,6 +1525,25 @@ app.post('/mcp/messages', async (req, res) => {
                 uri: 'ui://widget/claims.html',
                 mimeType: 'text/html+skybridge',
                 text: widgetHtml,
+                _meta: {
+                  'openai/widgetPrefersBorder': true,
+                },
+              }
+            ]
+          };
+        } else if (uri === 'ui://widget/claim-dashboard.html') {
+          // Inject MCP server URL so the widget can call back for updates
+          const serverUrl = getPublicServerUrl(req);
+          const injectedHtml = dashboardWidgetHtml.replace(
+            '</head>',
+            `<script>window.__MCP_SERVER_URL__="${serverUrl}";</script></head>`
+          );
+          result = {
+            contents: [
+              {
+                uri: 'ui://widget/claim-dashboard.html',
+                mimeType: 'text/html+skybridge',
+                text: injectedHtml,
                 _meta: {
                   'openai/widgetPrefersBorder': true,
                 },

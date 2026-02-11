@@ -11,8 +11,8 @@ const updateClaimSchema = Joi.object({
   description: Joi.string(),
   estimatedLoss: Joi.number().min(0),
   adjusterAssigned: Joi.string(),
-  notes: Joi.array().items(Joi.string()),
-  damageTypes: Joi.array().items(Joi.string())
+  notes: Joi.string(),
+  damageTypes: Joi.string()
 });
 
 const createClaimSchema = Joi.object({
@@ -24,11 +24,11 @@ const createClaimSchema = Joi.object({
   dateOfLoss: Joi.string().isoDate().required(),
   dateReported: Joi.string().isoDate().required(),
   status: Joi.string().required(),
-  damageTypes: Joi.array().items(Joi.string()).required(),
+  damageTypes: Joi.string().required(),
   description: Joi.string().required(),
   estimatedLoss: Joi.number().min(0).required(),
   adjusterAssigned: Joi.string(),
-  notes: Joi.array().items(Joi.string())
+  notes: Joi.string()
 });
 
 export class ClaimsImplementation {
@@ -67,6 +67,35 @@ export class ClaimsImplementation {
     }
     
     return claim;
+  }
+
+  async getClaimsByIds(claimIds: string[]): Promise<Claim[]> {
+    logger.info(`Fetching ${claimIds.length} claims by IDs`, { claimIds });
+
+    const results = await Promise.allSettled(
+      claimIds.map((id) => tableStorageService.getClaim(id))
+    );
+
+    const claims: Claim[] = [];
+    const notFound: string[] = [];
+
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled' && result.value) {
+        claims.push(result.value);
+      } else {
+        notFound.push(claimIds[i]);
+      }
+    });
+
+    if (notFound.length) {
+      logger.warn(`Claims not found: ${notFound.join(', ')}`);
+    }
+
+    if (!claims.length) {
+      throw new ClaimNotFoundError(claimIds.join(', '));
+    }
+
+    return claims;
   }
 
   async updateClaim(claimNumber: string, updateData: UpdateClaimRequest): Promise<Claim> {
@@ -116,7 +145,7 @@ export class ClaimsImplementation {
     const newClaim: Claim = {
       id: uuidv4(),
       ...claimData,
-      notes: claimData.notes || [],
+      notes: claimData.notes || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
